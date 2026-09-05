@@ -1,0 +1,30 @@
+import { Routes } from '@angular/router';
+import { HomeComponent } from './home/home.component';
+import { ProductListComponent } from './products/product-list/product-list.component';
+import { ProductFormComponent } from './products/product-form/product-form.component';
+import { CategoryListComponent } from './categories/category-list/category-list.component';
+import { CategoryFormComponent } from './categories/category-form/category-form.component';
+import { CustomerListComponent } from './customers/customer-list/customer-list.component';
+import { CustomerFormComponent } from './customers/customer-form/customer-form.component';
+import { OrderListComponent } from './orders/order-list/order-list.component';
+import { OrderCreateComponent } from './orders/order-create/order-create.component';
+import { OrderDetailComponent } from './orders/order-detail/order-detail.component';
+import { GoogleSheetsDashboardComponent } from './google-sheets/google-sheets-dashboard/google-sheets-dashboard.component';
+
+export const CLIENT_ROUTES: Routes = [
+  { path: '', component: HomeComponent },
+  { path: 'dashboard', component: HomeComponent },
+  { path: 'products', component: ProductListComponent },
+  { path: 'products/create', component: ProductFormComponent },
+  { path: 'products/edit/:id', component: ProductFormComponent },
+  { path: 'categories', component: CategoryListComponent },
+  { path: 'categories/create', component: CategoryFormComponent },
+  { path: 'categories/edit/:id', component: CategoryFormComponent },
+  { path: 'customers', component: CustomerListComponent },
+  { path: 'customers/create', component: CustomerFormComponent },
+  { path: 'customers/edit/:id', component: CustomerFormComponent },
+  { path: 'orders', component: OrderListComponent },
+  { path: 'orders/create', component: OrderCreateComponent },
+  { path: 'orders/:id', component: OrderDetailComponent },
+  { path: 'google-sheets', component: GoogleSheetsDashboardComponent }
+];

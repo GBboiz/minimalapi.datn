@@ -1,0 +1,371 @@
+<div class="admin-stores-container">
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+      <div class="d-flex align-items-center gap-2 mb-1">
+        <h4 class="fw-bold mb-0 text-dark">Quản lý Cửa hàng Nền tảng</h4>
+        <span class="badge bg-secondary text-dark border">Quản trị viên</span>
+      </div>
+      <p class="text-muted small mb-0">Hệ thống quản lý, mở rộng và giám sát toàn bộ các shop bán hàng trên nền tảng</p>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1" (click)="loadStores()" [disabled]="loading">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="23 4 23 10 17 10"></polyline>
+          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+        </svg>
+        <span>Làm mới</span>
+      </button>
+      <button class="btn btn-primary btn-sm d-flex align-items-center gap-1" (click)="openCreateModal()">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        <span>+ Mở Cửa hàng Mới</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Thông báo thành công / lỗi -->
+  <div *ngIf="successMsg" class="alert alert-success alert-dismissible fade show py-2 small" role="alert">
+    {{ successMsg }}
+    <button type="button" class="btn-close" (click)="successMsg = ''"></button>
+  </div>
+  <div *ngIf="errorMsg" class="alert alert-danger alert-dismissible fade show py-2 small" role="alert">
+    {{ errorMsg }}
+    <button type="button" class="btn-close" (click)="errorMsg = ''"></button>
+  </div>
+
+  <!-- 4 Thẻ Thống kê Tổng quan Toàn Nền Tảng -->
+  <div class="row g-3 mb-4">
+    <div class="col-sm-6 col-lg-3">
+      <div class="card h-100 summary-card">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="summary-label">TỔNG SỐ SHOP</span>
+            <div class="summary-icon">🏪</div>
+          </div>
+          <div class="summary-value">{{ totalStoresCount }} <small class="text-muted fs-6">shop</small></div>
+          <div class="text-muted small">Đang hoạt động trên sàn</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-sm-6 col-lg-3">
+      <div class="card h-100 summary-card">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="summary-label">DOANH THU TOÀN SÀN</span>
+            <div class="summary-icon">💵</div>
+          </div>
+          <div class="summary-value">{{ totalPlatformRevenue | number:'1.0-0' }} <small class="text-muted fs-6">VND</small></div>
+          <div class="text-muted small">Tích lũy từ tất cả cửa hàng</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-sm-6 col-lg-3">
+      <div class="card h-100 summary-card">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="summary-label">TỔNG ĐƠN HÀNG</span>
+            <div class="summary-icon">📦</div>
+          </div>
+          <div class="summary-value">{{ totalPlatformOrders }} <small class="text-muted fs-6">đơn</small></div>
+          <div class="text-muted small">Toàn bộ giao dịch hệ thống</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-sm-6 col-lg-3">
+      <div class="card h-100 summary-card">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="summary-label">MẶT HÀNG KINH DOANH</span>
+            <div class="summary-icon">🏷️</div>
+          </div>
+          <div class="summary-value">{{ totalPlatformProducts }} <small class="text-muted fs-6">sản phẩm</small></div>
+          <div class="text-muted small">Danh mục hàng của mọi shop</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Thanh tìm kiếm & lọc -->
+  <div class="card mb-4">
+    <div class="card-body py-2 px-3">
+      <div class="row g-2 align-items-center">
+        <div class="col-md-6">
+          <div class="input-group input-group-sm">
+            <span class="input-group-text bg-light border-end-0">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+            </span>
+            <input
+              type="text"
+              class="form-control border-start-0"
+              placeholder="Tìm kiếm theo tên shop, slug, chủ sở hữu, email..."
+              [(ngModel)]="searchTerm"
+              (input)="applyFilter()">
+          </div>
+        </div>
+        <div class="col-md-6 text-md-end text-muted small">
+          Hiển thị <strong>{{ filteredStores.length }}</strong> / {{ stores.length }} cửa hàng
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="text-center my-5">
+    <div class="spinner-border spinner-border-sm text-secondary" role="status">
+      <span class="visually-hidden">Đang tải danh sách...</span>
+    </div>
+  </div>
+
+  <!-- Bảng Danh Sách Cửa Hàng (CRUD) -->
+  <div class="card" *ngIf="!loading">
+    <div class="card-header d-flex justify-content-between align-items-center py-3">
+      <span class="fw-semibold text-dark">Danh sách các Shop Bán hàng</span>
+      <span class="badge bg-secondary text-dark">{{ filteredStores.length }} shop</span>
+    </div>
+    <div class="card-body p-0">
+      <div *ngIf="filteredStores.length === 0" class="p-4 text-center text-muted small">
+        Không tìm thấy cửa hàng nào phù hợp với từ khóa tìm kiếm.
+      </div>
+
+      <div *ngIf="filteredStores.length > 0" class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Cửa hàng</th>
+              <th>Chủ sở hữu</th>
+              <th class="text-center">Sản phẩm</th>
+              <th class="text-center">Đơn hàng</th>
+              <th class="text-center">Khách hàng</th>
+              <th>Doanh thu</th>
+              <th>Ngày tạo</th>
+              <th class="text-end">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let s of filteredStores" [class.table-light]="isCurrentStore(s.name)">
+              <!-- Tên Shop & Slug -->
+              <td>
+                <div class="d-flex align-items-center gap-2">
+                  <div class="store-avatar">
+                    {{ s.name.substring(0, 2).toUpperCase() }}
+                  </div>
+                  <div>
+                    <div class="fw-semibold text-dark d-flex align-items-center gap-1">
+                      {{ s.name }}
+                      <span *ngIf="isCurrentStore(s.name)" class="badge bg-success" style="font-size: 0.65rem;">
+                        Đang chọn
+                      </span>
+                    </div>
+                    <div class="text-muted small">slug: <code>{{ s.slug }}</code></div>
+                  </div>
+                </div>
+              </td>
+
+              <!-- Chủ sở hữu -->
+              <td>
+                <div class="fw-medium text-dark">{{ s.ownerName }}</div>
+                <div class="text-muted small">{{ s.ownerEmail }}</div>
+              </td>
+
+              <!-- Số sản phẩm -->
+              <td class="text-center">
+                <span class="badge bg-secondary text-dark">{{ s.totalProducts }}</span>
+              </td>
+
+              <!-- Số đơn hàng -->
+              <td class="text-center">
+                <span class="badge bg-secondary text-dark">{{ s.totalOrders }}</span>
+              </td>
+
+              <!-- Số khách hàng -->
+              <td class="text-center">
+                <span class="badge bg-secondary text-dark">{{ s.totalCustomers }}</span>
+              </td>
+
+              <!-- Doanh thu -->
+              <td>
+                <strong class="text-dark">{{ s.totalRevenue | number:'1.0-0' }} {{ s.currency }}</strong>
+              </td>
+
+              <!-- Ngày tạo -->
+              <td class="text-muted small">
+                {{ s.createdAt | date:'dd/MM/yyyy' }}
+              </td>
+
+              <!-- Nhóm Thao tác (Sửa, Xóa, Vào Shop) -->
+              <td class="text-end">
+                <div class="btn-group btn-group-sm">
+                  <!-- Sửa Shop -->
+                  <button
+                    class="btn btn-outline-secondary py-1 px-2"
+                    (click)="openEditModal(s)"
+                    title="Chỉnh sửa thông tin cửa hàng">
+                    Sửa
+                  </button>
+
+                  <!-- Truy cập Shop -->
+                  <button
+                    *ngIf="!isCurrentStore(s.name)"
+                    class="btn btn-outline-primary py-1 px-2"
+                    (click)="onSwitchStore(s)"
+                    [disabled]="switchingStoreId === s.id"
+                    title="Chuyển phiên sang cửa hàng này">
+                    <span *ngIf="switchingStoreId === s.id" class="spinner-border spinner-border-sm"></span>
+                    <span *ngIf="switchingStoreId !== s.id">Vào Shop</span>
+                  </button>
+
+                  <!-- Xóa Shop -->
+                  <button
+                    class="btn btn-outline-danger py-1 px-2"
+                    (click)="onDeleteStore(s)"
+                    [disabled]="deletingStoreId === s.id || stores.length <= 1"
+                    title="Xóa cửa hàng này">
+                    <span *ngIf="deletingStoreId === s.id" class="spinner-border spinner-border-sm"></span>
+                    <span *ngIf="deletingStoreId !== s.id">Xóa</span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 1: Tạo Cửa Hàng Mới -->
+  <div class="modal fade show d-block" *ngIf="showCreateModal" tabindex="-1" style="background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(2px);">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow">
+        <div class="modal-header border-bottom py-3">
+          <h5 class="modal-title fw-bold text-dark fs-6">Mở Cửa Hàng Bán Hàng Mới</h5>
+          <button type="button" class="btn-close" (click)="closeCreateModal()"></button>
+        </div>
+        <form (ngSubmit)="onCreateStore()">
+          <div class="modal-body p-4">
+            <div class="mb-3">
+              <label class="form-label small fw-semibold text-dark">Tên Cửa hàng <span class="text-danger">*</span></label>
+              <input
+                type="text"
+                class="form-control"
+                placeholder="Ví dụ: Shop Giày Thể Thao"
+                [(ngModel)]="newStore.name"
+                name="storeName"
+                required>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-semibold text-dark">Họ tên Chủ shop <span class="text-danger">*</span></label>
+              <input
+                type="text"
+                class="form-control"
+                placeholder="Ví dụ: Lê Minh Trí"
+                [(ngModel)]="newStore.ownerFullName"
+                name="ownerFullName"
+                required>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-semibold text-dark">Email Đăng nhập <span class="text-danger">*</span></label>
+              <input
+                type="email"
+                class="form-control"
+                placeholder="tri@example.com"
+                [(ngModel)]="newStore.ownerEmail"
+                name="ownerEmail"
+                required>
+              <div class="form-text small text-muted">Nếu email đã có tài khoản, cửa hàng sẽ liên kết với tài khoản này.</div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-semibold text-dark">Mật khẩu khởi tạo</label>
+              <input
+                type="password"
+                class="form-control"
+                placeholder="Mặc định: Shop@123456"
+                [(ngModel)]="newStore.password"
+                name="password">
+            </div>
+          </div>
+          <div class="modal-footer border-top py-2 px-4">
+            <button type="button" class="btn btn-outline-secondary btn-sm" (click)="closeCreateModal()">Hủy</button>
+            <button type="submit" class="btn btn-primary btn-sm" [disabled]="creating || !newStore.name.trim() || !newStore.ownerEmail.trim()">
+              <span *ngIf="creating" class="spinner-border spinner-border-sm me-1"></span>
+              Xác nhận Tạo Shop
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 2: Sửa Thông Tin Cửa Hàng -->
+  <div class="modal fade show d-block" *ngIf="showEditModal" tabindex="-1" style="background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(2px);">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow">
+        <div class="modal-header border-bottom py-3">
+          <h5 class="modal-title fw-bold text-dark fs-6">Chỉnh Sửa Cửa Hàng</h5>
+          <button type="button" class="btn-close" (click)="closeEditModal()"></button>
+        </div>
+        <form (ngSubmit)="onUpdateStore()">
+          <div class="modal-body p-4">
+            <div class="mb-3">
+              <label class="form-label small fw-semibold text-dark">Tên Cửa hàng <span class="text-danger">*</span></label>
+              <input
+                type="text"
+                class="form-control"
+                [(ngModel)]="editStoreData.name"
+                name="editStoreName"
+                required>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-semibold text-dark">Slug định danh</label>
+              <input
+                type="text"
+                class="form-control"
+                [(ngModel)]="editStoreData.slug"
+                name="editStoreSlug"
+                placeholder="Ví dụ: shop-the-thao">
+              <div class="form-text small text-muted">Để trống để tự tạo slug từ tên cửa hàng.</div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-semibold text-dark">Họ tên Chủ shop</label>
+              <input
+                type="text"
+                class="form-control"
+                [(ngModel)]="editStoreData.ownerFullName"
+                name="editOwnerFullName">
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-semibold text-dark">Email Chủ shop</label>
+              <input
+                type="text"
+                class="form-control bg-light"
+                [value]="editStoreData.ownerEmail"
+                disabled>
+              <div class="form-text small text-muted">Email đăng nhập không thể thay đổi.</div>
+            </div>
+          </div>
+          <div class="modal-footer border-top py-2 px-4">
+            <button type="button" class="btn btn-outline-secondary btn-sm" (click)="closeEditModal()">Hủy</button>
+            <button type="submit" class="btn btn-primary btn-sm" [disabled]="editing || !editStoreData.name.trim()">
+              <span *ngIf="editing" class="spinner-border spinner-border-sm me-1"></span>
+              Lưu Thay Đổi
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

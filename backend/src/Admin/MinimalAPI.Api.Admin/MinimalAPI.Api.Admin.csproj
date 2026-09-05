@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <ItemGroup>
+    <ProjectReference Include="..\Minimal.Application.Admin\Minimal.Application.Admin.csproj" />
+    <ProjectReference Include="..\Minimal.Infrastructure.Admin\Minimal.Infrastructure.Admin.csproj" />
+    <ProjectReference Include="..\Minimal.Domain.Admin\Minimal.Domain.Admin.csproj" />
+    <ProjectReference Include="..\..\Client\Minimal.Infrastructure.Client\Minimal.Infrastructure.Client.csproj" />
+    <ProjectReference Include="..\..\Client\Minimal.Domain.Client\Minimal.Domain.Client.csproj" />
+  </ItemGroup>
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <OutputType>Library</OutputType>
+  </PropertyGroup>
+</Project>

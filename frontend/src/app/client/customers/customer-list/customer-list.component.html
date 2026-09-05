@@ -1,0 +1,81 @@
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Danh sách khách hàng</h2>
+    <a routerLink="/customers/create" class="btn btn-primary">
+      <i class="bi bi-person-plus"></i> Thêm khách hàng
+    </a>
+  </div>
+
+  <!-- Search -->
+  <div class="row mb-3">
+    <div class="col-md-6">
+      <div class="input-group">
+        <input
+          type="text"
+          class="form-control"
+          placeholder="Tìm theo tên hoặc số điện thoại..."
+          [(ngModel)]="searchTerm"
+          (keyup.enter)="onSearch()">
+        <button class="btn btn-outline-secondary" type="button" (click)="onSearch()">
+          Tìm kiếm
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="text-center my-4">
+    <div class="spinner-border" role="status">
+      <span class="visually-hidden">Đang tải...</span>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div *ngIf="!loading && customers.length > 0" class="table-responsive">
+    <table class="table table-striped table-hover">
+      <thead>
+        <tr>
+          <th>Họ tên</th>
+          <th>Số điện thoại</th>
+          <th>Email</th>
+          <th>Địa chỉ</th>
+          <th>Ngày tạo</th>
+          <th>Thao tác</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let customer of customers">
+          <td><strong>{{ customer.name }}</strong></td>
+          <td><code>{{ customer.phone }}</code></td>
+          <td>{{ customer.email || '-' }}</td>
+          <td>{{ customer.address || '-' }}</td>
+          <td>{{ customer.createdAt | date:'dd/MM/yyyy' }}</td>
+          <td>
+            <a [routerLink]="['/customers/edit', customer.id]" class="btn btn-sm btn-warning me-1">Sửa</a>
+            <button (click)="onDelete(customer.id, customer.name)" class="btn btn-sm btn-danger">Xóa</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- No data -->
+  <div *ngIf="!loading && customers.length === 0" class="alert alert-info">
+    Chưa có khách hàng nào
+  </div>
+
+  <!-- Pagination -->
+  <nav *ngIf="pagedResult && pagedResult.totalPages > 1" aria-label="Page navigation">
+    <ul class="pagination justify-content-center">
+      <li class="page-item" [class.disabled]="!pagedResult.hasPrevious">
+        <button class="page-link" (click)="onPageChange(currentPage - 1)" [disabled]="!pagedResult.hasPrevious">Trước</button>
+      </li>
+      <li class="page-item active">
+        <span class="page-link">Trang {{ pagedResult.page }} / {{ pagedResult.totalPages }}</span>
+      </li>
+      <li class="page-item" [class.disabled]="!pagedResult.hasNext">
+        <button class="page-link" (click)="onPageChange(currentPage + 1)" [disabled]="!pagedResult.hasNext">Sau</button>
+      </li>
+    </ul>
+  </nav>
+</div>

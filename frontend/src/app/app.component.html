@@ -1,31 +1,256 @@
-<!-- Navbar -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-  <div class="container-fluid">
-    <a class="navbar-brand" routerLink="/">{{ title }}</a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav">
-        <li class="nav-item">
-          <a class="nav-link" routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
-            Trang chủ
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" routerLink="/products" routerLinkActive="active">
-            Sản phẩm
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" routerLink="/categories" routerLinkActive="active">
-            Danh mục
-          </a>
-        </li>
-      </ul>
-    </div>
-  </div>
-</nav>
+<!-- Layout khi đã đăng nhập -->
+<div class="app-layout" *ngIf="auth.isAuthenticated">
+  <!-- Backdrop cho Mobile -->
+  <div class="sidebar-backdrop" *ngIf="sidebarOpen" (click)="closeSidebarMobile()"></div>
 
-<!-- Router Outlet -->
-<router-outlet />
+  <!-- Sidebar Điều Hướng -->
+  <aside class="app-sidebar" [class.open]="sidebarOpen">
+    <!-- Header Sidebar: Logo & Thông tin Shop -->
+    <div class="sidebar-header">
+      <a routerLink="/" class="brand-link" (click)="closeSidebarMobile()">
+        <div class="brand-icon">
+          <span>M</span>
+        </div>
+        <div class="brand-meta">
+          <div class="brand-name">MinimalAPI</div>
+          <div class="brand-tagline">Hệ thống Bán hàng</div>
+        </div>
+      </a>
+      <button class="sidebar-close-btn d-lg-none" (click)="closeSidebarMobile()" aria-label="Đóng menu">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Cửa hàng hiện tại / Admin Badge -->
+    <div class="store-badge-card" *ngIf="!isAdminMode">
+      <div class="store-indicator-dot"></div>
+      <div class="store-info-text">
+        <div class="store-label">CỬA HÀNG HIỆN TẠI</div>
+        <div class="store-name" [title]="auth.storeName">{{ auth.storeName || 'Cửa hàng mẫu' }}</div>
+      </div>
+    </div>
+    <div class="store-badge-card admin-mode-badge" *ngIf="isAdminMode">
+      <div class="store-indicator-dot admin-dot"></div>
+      <div class="store-info-text">
+        <div class="store-label text-info">QUẢN TRỊ VIÊN</div>
+        <div class="store-name">Toàn Hệ Thống</div>
+      </div>
+    </div>
+
+    <!-- Navigation Menu Items -->
+    <div class="sidebar-nav-container">
+
+      <!-- ==================== CHẾ ĐỘ QUẢN TRỊ VIÊN ==================== -->
+      <!-- Trang Admin: CHỈ QUẢN LÝ CÁC SHOP BÁN HÀNG, KHÔNG CÓ QUẢN LÝ BÁN HÀNG -->
+      <ng-container *ngIf="isAdminMode">
+        <div class="nav-section-title">QUẢN TRỊ NỀN TẢNG</div>
+        <nav class="sidebar-nav">
+          <!-- Quản lý Cửa hàng -->
+          <a class="nav-item" routerLink="/admin/stores" routerLinkActive="active" (click)="closeSidebarMobile()">
+            <span class="nav-icon">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                <line x1="8" y1="21" x2="16" y2="21"></line>
+                <line x1="12" y1="17" x2="12" y2="21"></line>
+              </svg>
+            </span>
+            <span class="nav-text">Quản lý Cửa hàng</span>
+          </a>
+        </nav>
+
+        <div class="nav-section-title mt-3">CHUYỂN CHẾ ĐỘ</div>
+        <nav class="sidebar-nav">
+          <a class="nav-item" routerLink="/" (click)="closeSidebarMobile()">
+            <span class="nav-icon">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+              </svg>
+            </span>
+            <span class="nav-text">Vào Shop ({{ auth.storeName }})</span>
+          </a>
+        </nav>
+      </ng-container>
+
+      <!-- ==================== CHẾ ĐỘ CỬA HÀNG BÁN HÀNG ==================== -->
+      <ng-container *ngIf="!isAdminMode">
+        <!-- Section: TỔNG QUAN -->
+        <div class="nav-section-title">TỔNG QUAN</div>
+        <nav class="sidebar-nav">
+          <!-- Trang chủ -->
+          <a class="nav-item" routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" (click)="closeSidebarMobile()">
+            <span class="nav-icon">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+              </svg>
+            </span>
+            <span class="nav-text">Trang chủ</span>
+          </a>
+        </nav>
+
+        <!-- Section: QUẢN LÝ BÁN HÀNG -->
+        <div class="nav-section-title">QUẢN LÝ BÁN HÀNG</div>
+        <nav class="sidebar-nav">
+          <!-- Đơn hàng -->
+          <a class="nav-item" routerLink="/orders" routerLinkActive="active" (click)="closeSidebarMobile()">
+            <span class="nav-icon">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="9" cy="21" r="1"></circle>
+                <circle cx="20" cy="21" r="1"></circle>
+                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+              </svg>
+            </span>
+            <span class="nav-text">Đơn hàng</span>
+          </a>
+
+          <!-- Sản phẩm & Kho -->
+          <a class="nav-item" routerLink="/products" routerLinkActive="active" (click)="closeSidebarMobile()">
+            <span class="nav-icon">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                <line x1="12" y1="22.08" x2="12" y2="12"></line>
+              </svg>
+            </span>
+            <span class="nav-text">Sản phẩm & Tồn kho</span>
+          </a>
+
+          <!-- Danh mục -->
+          <a class="nav-item" routerLink="/categories" routerLinkActive="active" (click)="closeSidebarMobile()">
+            <span class="nav-icon">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="4" y1="6" x2="20" y2="6"></line>
+                <line x1="4" y1="12" x2="20" y2="12"></line>
+                <line x1="4" y1="18" x2="20" y2="18"></line>
+              </svg>
+            </span>
+            <span class="nav-text">Danh mục</span>
+          </a>
+
+          <!-- Khách hàng -->
+          <a class="nav-item" routerLink="/customers" routerLinkActive="active" (click)="closeSidebarMobile()">
+            <span class="nav-icon">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+              </svg>
+            </span>
+            <span class="nav-text">Khách hàng</span>
+          </a>
+        </nav>
+
+        <!-- Section: TÍCH HỢP HỆ THỐNG -->
+        <div class="nav-section-title">TÍCH HỢP & DỊCH VỤ</div>
+        <nav class="sidebar-nav">
+          <!-- Google Sheets -->
+          <a class="nav-item" routerLink="/google-sheets" routerLinkActive="active" (click)="closeSidebarMobile()">
+            <span class="nav-icon">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="3" y1="9" x2="21" y2="9"></line>
+                <line x1="3" y1="15" x2="21" y2="15"></line>
+                <line x1="9" y1="3" x2="9" y2="21"></line>
+                <line x1="15" y1="3" x2="15" y2="21"></line>
+              </svg>
+            </span>
+            <span class="nav-text">Google Sheets & Outbox</span>
+          </a>
+        </nav>
+
+        <!-- Section: QUẢN TRỊ NỀN TẢNG (Chỉ hiển thị cho tài khoản Quản trị viên hệ thống) -->
+        <ng-container *ngIf="auth.isAdmin">
+          <div class="nav-section-title">QUẢN TRỊ NỀN TẢNG</div>
+          <nav class="sidebar-nav">
+            <!-- Quản lý Cửa hàng -->
+            <a class="nav-item" routerLink="/admin/stores" routerLinkActive="active" (click)="closeSidebarMobile()">
+              <span class="nav-icon">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                  <line x1="8" y1="21" x2="16" y2="21"></line>
+                  <line x1="12" y1="17" x2="12" y2="21"></line>
+                </svg>
+              </span>
+              <span class="nav-text">Quản lý Cửa hàng</span>
+            </a>
+          </nav>
+        </ng-container>
+      </ng-container>
+    </div>
+
+    <!-- User Profile & Đăng xuất Footer -->
+    <div class="sidebar-footer">
+      <div class="user-card">
+        <div class="user-avatar">
+          {{ auth.isAdmin ? 'SA' : storeInitials }}
+        </div>
+        <div class="user-info">
+          <div class="user-name" [title]="auth.storeName">{{ auth.isAdmin ? 'SuperAdmin' : (auth.storeName || 'Cửa hàng') }}</div>
+          <div class="user-role">{{ auth.isAdmin ? 'Quản trị viên Hệ thống' : 'Quản lý Bán hàng' }}</div>
+        </div>
+      </div>
+      <button class="btn-logout" (click)="auth.logout()" title="Đăng xuất khỏi hệ thống">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+          <polyline points="16 17 21 12 16 7"></polyline>
+          <line x1="21" y1="12" x2="9" y2="12"></line>
+        </svg>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Khu vực nội dung chính -->
+  <div class="app-main">
+    <!-- Topbar Tối Giản -->
+    <header class="app-topbar">
+      <div class="topbar-left">
+        <!-- Nút toggle sidebar trên Mobile -->
+        <button class="btn-mobile-toggle d-lg-none" (click)="toggleSidebar()" aria-label="Mở menu điều hướng">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
+        <span class="topbar-store-title">
+          <span class="topbar-store-label">Cửa hàng:</span>
+          <strong>{{ auth.storeName || 'Cửa hàng mẫu' }}</strong>
+        </span>
+      </div>
+
+      <div class="topbar-right">
+        <!-- Quick Dev Links: Swagger & Seq -->
+        <a href="http://localhost:5001/swagger" target="_blank" class="topbar-tool-chip" title="Mở tài liệu API Swagger">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1">
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+          </svg>
+          Swagger API
+        </a>
+        <a href="http://localhost:8081" target="_blank" class="topbar-tool-chip" title="Mở hệ thống Seq Structured Logging">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1">
+            <line x1="18" y1="20" x2="18" y2="10"></line>
+            <line x1="12" y1="20" x2="12" y2="4"></line>
+            <line x1="6" y1="20" x2="6" y2="14"></line>
+          </svg>
+          Seq Log
+        </a>
+      </div>
+    </header>
+
+    <!-- Nội dung trang -->
+    <main class="app-content-body">
+      <router-outlet />
+    </main>
+  </div>
+</div>
+
+<!-- Layout độc lập khi chưa đăng nhập (Login / Register) -->
+<div class="auth-wrapper" *ngIf="!auth.isAuthenticated">
+  <router-outlet />
+</div>

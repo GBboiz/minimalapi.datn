@@ -64,7 +64,7 @@ services:
       Serilog__WriteTo__2__Name: Seq
       Serilog__WriteTo__2__Args__serverUrl: "http://seq:5341"
     ports:
-      - "5000:8080"
+      - "5001:8080"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s
@@ -84,7 +84,7 @@ services:
       dockerfile: Dockerfile
     container_name: Web
     ports:
-      - "4200:80"
+      - "4201:80"
     depends_on:
       - api
     restart: unless-stopped

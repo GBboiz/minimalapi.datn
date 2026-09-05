@@ -1,8 +1,14 @@
 <Solution>
-  <Folder Name="/src/">
-    <Project Path="src/MinimalAPI.Api/MinimalAPI.Api.csproj" />
-    <Project Path="src/MinimalAPI.Application/MinimalAPI.Application.csproj" />
-    <Project Path="src/MinimalAPI.Domain/MinimalAPI.Domain.csproj" />
-    <Project Path="src/MinimalAPI.Infrastructure/MinimalAPI.Infrastructure.csproj" />
+  <Folder Name="/src/Admin/">
+    <Project Path="src/Admin/MinimalAPI.Api.Admin/MinimalAPI.Api.Admin.csproj" />
+    <Project Path="src/Admin/Minimal.Application.Admin/Minimal.Application.Admin.csproj" />
+    <Project Path="src/Admin/Minimal.Domain.Admin/Minimal.Domain.Admin.csproj" />
+    <Project Path="src/Admin/Minimal.Infrastructure.Admin/Minimal.Infrastructure.Admin.csproj" />
+  </Folder>
+  <Folder Name="/src/Client/">
+    <Project Path="src/Client/Minimal.Api.Client/Minimal.Api.Client.csproj" />
+    <Project Path="src/Client/Minimal.Application.Client/Minimal.Application.Client.csproj" />
+    <Project Path="src/Client/Minimal.Domain.Client/Minimal.Domain.Client.csproj" />
+    <Project Path="src/Client/Minimal.Infrastructure.Client/Minimal.Infrastructure.Client.csproj" />
   </Folder>
 </Solution>

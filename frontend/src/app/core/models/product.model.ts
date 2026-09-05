@@ -1,6 +1,8 @@
 export interface Product {
   id: string;
   name: string;
+  sku: string;
+  stockQuantity: number;
   price: number;
   currency: string;
   categoryId: string;
@@ -11,6 +13,8 @@ export interface Product {
 }
 
 export interface CreateProductRequest {
+  sku: string;
+  stockQuantity: number;
   name: string;
   price: number;
   currency: string;
@@ -19,6 +23,8 @@ export interface CreateProductRequest {
 }
 
 export interface UpdateProductRequest {
+  sku: string;
+  stockQuantity: number;
   name: string;
   price: number;
   currency: string;

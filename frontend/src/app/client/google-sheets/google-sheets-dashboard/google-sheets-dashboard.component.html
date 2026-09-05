@@ -1,0 +1,221 @@
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h2 class="mb-1">📊 Tích hợp Google Sheets & Outbox Worker</h2>
+      <p class="text-muted mb-0">Đồng bộ dữ liệu đơn hàng vào Google Sheets theo từng cửa hàng (Outbox Pattern & Retry)</p>
+    </div>
+    <button class="btn btn-outline-secondary" (click)="loadStatus(); loadHistory()">
+      🔄 Làm mới
+    </button>
+  </div>
+
+  <!-- Thông báo thành công / lỗi -->
+  <div *ngIf="successMessage" class="alert alert-success alert-dismissible fade show" role="alert">
+    {{ successMessage }}
+    <button type="button" class="btn-close" (click)="successMessage = ''"></button>
+  </div>
+  <div *ngIf="errorMessage" class="alert alert-danger alert-dismissible fade show" role="alert">
+    {{ errorMessage }}
+    <button type="button" class="btn-close" (click)="errorMessage = ''"></button>
+  </div>
+
+  <div class="row g-4 mb-4">
+    <!-- Cột trái: Trạng thái & Cấu hình -->
+    <div class="col-lg-5">
+      <div class="card shadow-sm h-100">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+          <strong>Trạng thái kết nối</strong>
+          <span *ngIf="status?.isConnected" class="badge bg-success">Đã kết nối</span>
+          <span *ngIf="!status?.isConnected" class="badge bg-secondary">Chưa kết nối</span>
+        </div>
+        <div class="card-body">
+          <!-- Chi tiết kết nối hiện tại -->
+          <div *ngIf="status?.isConnected" class="mb-3 p-3 bg-light rounded border">
+            <div class="mb-1"><strong>Spreadsheet ID:</strong></div>
+            <div class="text-break small text-primary mb-2"><code>{{ status?.spreadsheetId }}</code></div>
+            <div class="mb-1"><strong>Tên Sheet:</strong> <code>{{ status?.sheetName }}</code></div>
+            <div class="small text-muted" *ngIf="status?.lastSyncAt">
+              Lần đồng bộ gần nhất: {{ status?.lastSyncAt | date:'dd/MM/yyyy HH:mm:ss' }}
+            </div>
+            <div class="text-danger small mt-2" *ngIf="status?.lastErrorMessage">
+              Lỗi: {{ status?.lastErrorMessage }}
+            </div>
+          </div>
+
+          <!-- Form cấu hình -->
+          <form (ngSubmit)="saveConfig()">
+            <div class="mb-3">
+              <label class="form-label">Google Spreadsheet ID <span class="text-danger">*</span></label>
+              <input
+                type="text"
+                class="form-control"
+                placeholder="Ví dụ: 1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms"
+                [(ngModel)]="spreadsheetId"
+                name="spreadsheetId"
+                required>
+              <div class="form-text small">
+                Lấy từ link bảng tính: <code>https://docs.google.com/spreadsheets/d/<b>[ID]</b>/edit</code>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Tên Sheet tab</label>
+              <input
+                type="text"
+                class="form-control"
+                placeholder="Đơn hàng"
+                [(ngModel)]="sheetName"
+                name="sheetName">
+            </div>
+
+            <div class="d-grid gap-2">
+              <button
+                type="submit"
+                class="btn btn-primary"
+                [disabled]="connecting || !spreadsheetId.trim()">
+                <span *ngIf="connecting" class="spinner-border spinner-border-sm me-1"></span>
+                💾 Lưu cấu hình & Kết nối
+              </button>
+
+              <button
+                type="button"
+                class="btn btn-outline-success"
+                (click)="fillDemo()"
+                [disabled]="connecting">
+                ✨ Kết nối nhanh với Sheet Demo
+              </button>
+
+              <button
+                *ngIf="status?.isConnected"
+                type="button"
+                class="btn btn-outline-danger btn-sm mt-2"
+                (click)="disconnect()"
+                [disabled]="connecting">
+                Ngắt kết nối
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cột phải: Giới thiệu & Kiến trúc Outbox -->
+    <div class="col-lg-7">
+      <div class="card shadow-sm h-100">
+        <div class="card-header bg-light">
+          <strong>Kiến trúc Transactional Outbox Pattern</strong>
+        </div>
+        <div class="card-body">
+          <div class="alert alert-info py-2 small mb-3">
+            <strong>Cơ chế hoạt động:</strong>
+            <ol class="mb-0 ps-3 mt-1">
+              <li>Khi nhân viên tạo đơn, hệ thống lưu đơn hàng và sinh tin nhắn <code>OutboxMessage</code> cùng lúc trong PostgreSQL.</li>
+              <li>Background Service (<code>GoogleSheetsSyncWorker</code>) định kỳ quét hàng đợi outbox mỗi 10 giây.</li>
+              <li>Giải mã Refresh Token của cửa hàng và gọi Google Sheets API để thêm dòng dữ liệu.</li>
+              <li>Nếu mất mạng hoặc Google lỗi, tin nhắn sẽ tự động thử lại (Retry) mà không làm mất đơn hàng.</li>
+            </ol>
+          </div>
+
+          <h6 class="fw-bold mb-2">Các cột dữ liệu được đồng bộ vào Sheet:</h6>
+          <div class="table-responsive">
+            <table class="table table-bordered table-sm text-center small mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Cột A</th>
+                  <th>Cột B</th>
+                  <th>Cột C</th>
+                  <th>Cột D</th>
+                  <th>Cột E</th>
+                  <th>Cột F</th>
+                  <th>Cột G</th>
+                  <th>Cột H</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Mã đơn</td>
+                  <td>Ngày tạo</td>
+                  <td>Khách hàng</td>
+                  <td>Số ĐT</td>
+                  <td>Sản phẩm</td>
+                  <td>SL</td>
+                  <td>Tổng tiền</td>
+                  <td>Trạng thái</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bảng Lịch sử đồng bộ Outbox -->
+  <div class="card shadow-sm">
+    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">📋 Hàng đợi & Lịch sử đồng bộ Outbox</h5>
+      <span class="badge bg-secondary">{{ history.length }} bản ghi gần nhất</span>
+    </div>
+    <div class="card-body p-0">
+      <div *ngIf="historyLoading" class="text-center py-4">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Đang tải...</span>
+        </div>
+      </div>
+
+      <div *ngIf="!historyLoading && history.length === 0" class="p-4 text-center text-muted">
+        Chưa có tin nhắn đồng bộ Outbox nào. Hãy thử tạo một đơn hàng mới!
+      </div>
+
+      <div *ngIf="!historyLoading && history.length > 0" class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Mã đơn</th>
+              <th>Khách hàng</th>
+              <th>Sản phẩm</th>
+              <th>Tổng tiền</th>
+              <th>Thời gian tạo</th>
+              <th>Trạng thái</th>
+              <th>Lần thử</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of history">
+              <td><code>{{ item.orderCode }}</code></td>
+              <td>{{ item.customerName }}</td>
+              <td class="small">{{ item.productsSummary }}</td>
+              <td><strong>{{ item.totalAmount | number:'1.0-0' }} {{ item.currency }}</strong></td>
+              <td class="small">{{ item.occurredAt | date:'dd/MM/yyyy HH:mm:ss' }}</td>
+              <td>
+                <span *ngIf="item.status === 'Success'" class="badge bg-success">Thành công</span>
+                <span *ngIf="item.status === 'Pending'" class="badge bg-warning text-dark">Chờ Worker</span>
+                <span *ngIf="item.status === 'Retrying'" class="badge bg-warning">Đang thử lại</span>
+                <span *ngIf="item.status === 'Failed'" class="badge bg-danger">Lỗi</span>
+                <div *ngIf="item.error" class="text-danger small mt-1" style="max-width: 250px; font-size: 0.75rem;">
+                  {{ item.error }}
+                </div>
+              </td>
+              <td>
+                <span class="badge bg-light text-dark border">{{ item.retryCount }}</span>
+              </td>
+              <td>
+                <button
+                  *ngIf="item.status === 'Failed' || item.status === 'Retrying'"
+                  class="btn btn-sm btn-outline-primary"
+                  (click)="retrySync(item.id)"
+                  title="Thử lại ngay">
+                  🔄 Thử lại
+                </button>
+                <span *ngIf="item.status === 'Success'" class="text-success small">
+                  ✓ Hoàn tất
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,17 +1,24 @@
 import { Routes } from '@angular/router';
-import { HomeComponent } from './features/home/home.component';
-import { ProductListComponent } from './features/products/product-list/product-list.component';
-import { ProductFormComponent } from './features/products/product-form/product-form.component';
-import { CategoryListComponent } from './features/categories/category-list/category-list.component';
-import { CategoryFormComponent } from './features/categories/category-form/category-form.component';
+import { LoginComponent } from './core/auth/login/login.component';
+import { RegisterComponent } from './core/auth/register/register.component';
+import { authGuard } from './core/guards/auth.guard';
+import { adminGuard } from './core/guards/admin.guard';
+import { ADMIN_ROUTES } from './admin/admin.routes';
+import { CLIENT_ROUTES } from './client/client.routes';
 
 export const routes: Routes = [
-  { path: '', component: HomeComponent },
-  { path: 'products', component: ProductListComponent },
-  { path: 'products/create', component: ProductFormComponent },
-  { path: 'products/edit/:id', component: ProductFormComponent },
-  { path: 'categories', component: CategoryListComponent },
-  { path: 'categories/create', component: CategoryFormComponent },
-  { path: 'categories/edit/:id', component: CategoryFormComponent },
+  { path: 'login', component: LoginComponent },
+  { path: 'register', component: RegisterComponent },
+  {
+    path: 'admin',
+    canActivate: [authGuard, adminGuard],
+    children: ADMIN_ROUTES
+  },
+  {
+    path: '',
+    canActivate: [authGuard],
+    children: CLIENT_ROUTES
+  },
+  { path: 'stores', redirectTo: 'admin/stores', pathMatch: 'full' },
   { path: '**', redirectTo: '' }
 ];

@@ -1,0 +1,126 @@
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Tạo đơn hàng mới</h2>
+    <a routerLink="/orders" class="btn btn-outline-secondary">Quay lại danh sách</a>
+  </div>
+
+  <div *ngIf="loading" class="text-center my-4">
+    <div class="spinner-border" role="status">
+      <span class="visually-hidden">Đang tải...</span>
+    </div>
+  </div>
+
+  <div *ngIf="!loading" class="row">
+    <!-- Cột trái: Chọn thông tin -->
+    <div class="col-md-7">
+      <div class="card mb-3">
+        <div class="card-header bg-light">
+          <strong>1. Chọn khách hàng</strong>
+        </div>
+        <div class="card-body">
+          <div class="mb-3">
+            <label class="form-label">Khách hàng <span class="text-danger">*</span></label>
+            <select class="form-select" [(ngModel)]="selectedCustomerId">
+              <option value="">-- Chọn khách hàng --</option>
+              <option *ngFor="let c of customers" [value]="c.id">
+                {{ c.name }} - {{ c.phone }}
+              </option>
+            </select>
+          </div>
+          <div class="text-muted small">
+            Chưa có khách hàng? <a routerLink="/customers/create" target="_blank">Thêm khách hàng mới</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header bg-light">
+          <strong>2. Thêm sản phẩm vào đơn</strong>
+        </div>
+        <div class="card-body">
+          <div class="row g-2 align-items-end">
+            <div class="col-md-7">
+              <label class="form-label">Sản phẩm</label>
+              <select class="form-select" [(ngModel)]="selectedProductId">
+                <option value="">-- Chọn sản phẩm --</option>
+                <option *ngFor="let p of products" [value]="p.id">
+                  {{ p.name }} (SKU: {{ p.sku }} - Tồn: {{ p.stockQuantity }} - {{ p.price | number:'1.0-0' }} {{ p.currency }})
+                </option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Số lượng</label>
+              <input type="number" class="form-control" min="1" [(ngModel)]="selectedQuantity">
+            </div>
+            <div class="col-md-2">
+              <button
+                type="button"
+                class="btn btn-success w-100"
+                (click)="addToCart()"
+                [disabled]="!selectedProductId || selectedQuantity <= 0">
+                Thêm
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cột phải: Danh sách đơn hàng & Tổng tiền -->
+    <div class="col-md-5">
+      <div class="card">
+        <div class="card-header bg-primary text-white">
+          <strong>Chi tiết đơn hàng</strong>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-sm mb-0">
+              <thead>
+                <tr>
+                  <th>Sản phẩm</th>
+                  <th class="text-center">SL</th>
+                  <th class="text-end">Đơn giá</th>
+                  <th class="text-end">Thành tiền</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let item of cart; let i = index">
+                  <td>{{ item.product.name }}</td>
+                  <td class="text-center">{{ item.quantity }}</td>
+                  <td class="text-end">{{ item.product.price | number:'1.0-0' }}</td>
+                  <td class="text-end"><strong>{{ (item.product.price * item.quantity) | number:'1.0-0' }}</strong></td>
+                  <td>
+                    <button class="btn btn-sm btn-link text-danger p-0" (click)="removeFromCart(i)">
+                      &times;
+                    </button>
+                  </td>
+                </tr>
+                <tr *ngIf="cart.length === 0">
+                  <td colspan="5" class="text-center text-muted py-3">
+                    Chưa có sản phẩm nào trong đơn
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card-footer">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <span class="fs-5">Tổng cộng:</span>
+            <span class="fs-4 fw-bold text-danger">
+              {{ totalAmount | number:'1.0-0' }} VND
+            </span>
+          </div>
+
+          <button
+            class="btn btn-primary w-100 py-2"
+            (click)="onSubmit()"
+            [disabled]="submitting || !selectedCustomerId || cart.length === 0">
+            {{ submitting ? 'Đang tạo đơn...' : 'Tạo đơn hàng' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
