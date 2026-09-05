@@ -1,0 +1,488 @@
+<div class="ai-scanner-container py-3">
+  <!-- Header: Tiêu đề & Giới thiệu tính năng AI -->
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+    <div>
+      <div class="d-flex align-items-center gap-2 mb-1">
+        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2.5 py-1 rounded-pill fw-semibold">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+          </svg>
+          Giai đoạn 1: IoT & AI Vision
+        </span>
+        <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1 rounded-pill">
+          Gemini 2.5 Flash + Dual-Mode Offline
+        </span>
+      </div>
+      <h2 class="h4 fw-bold text-dark mb-1">Quét Hóa Đơn Tự Động Bằng AI</h2>
+      <p class="text-muted small mb-0">
+        Chụp hóa đơn/phiếu giao hàng hoặc tải ảnh lên &rarr; AI Vision tự bóc tách thực thể &rarr; Đối soát tồn kho &rarr; Tạo đơn hàng &rarr; Tự động đồng bộ Google Sheets.
+      </p>
+    </div>
+
+    <!-- Quick Demo Triggers -->
+    <div class="d-flex align-items-center gap-2">
+      <div class="dropdown">
+        <button class="btn btn-outline-secondary btn-sm dropdown-toggle d-flex align-items-center gap-1.5" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+          </svg>
+          Mẫu thử nghiệm nhanh
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-light-subtle">
+          <li><h6 class="dropdown-header text-uppercase small fw-bold">Dữ liệu mẫu demo trực tiếp</h6></li>
+          <li>
+            <button class="dropdown-item d-flex align-items-center gap-2 py-2" (click)="loadSampleInvoice('fashion')">
+              <span class="badge bg-info-subtle text-info">Mẫu 1</span>
+              <div>
+                <div class="fw-medium small">Hóa đơn Thời Trang & Phụ kiện</div>
+                <div class="text-muted" style="font-size: 0.75rem;">Áo thun, Quần Jean, Ví da</div>
+              </div>
+            </button>
+          </li>
+          <li>
+            <button class="dropdown-item d-flex align-items-center gap-2 py-2" (click)="loadSampleInvoice('tech')">
+              <span class="badge bg-warning-subtle text-warning">Mẫu 2</span>
+              <div>
+                <div class="fw-medium small">Hóa đơn Thiết Bị Công Nghệ</div>
+                <div class="text-muted" style="font-size: 0.75rem;">Chuột không dây, Tai nghe Bluetooth</div>
+              </div>
+            </button>
+          </li>
+        </ul>
+      </div>
+
+      <button *ngIf="scannedResult || previewImageUrl || successResponse" class="btn btn-outline-danger btn-sm d-flex align-items-center gap-1" (click)="resetScan()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="1 4 1 10 7 10"></polyline>
+          <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+        </svg>
+        Làm mới
+      </button>
+    </div>
+  </div>
+
+  <!-- Thông báo lỗi tổng quát nếu có -->
+  <div *ngIf="errorMsg" class="alert alert-danger alert-dismissible fade show d-flex align-items-center gap-2 mb-4" role="alert">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-danger flex-shrink-0">
+      <circle cx="12" cy="12" r="10"></circle>
+      <line x1="12" y1="8" x2="12" y2="12"></line>
+      <line x1="12" y1="16" x2="12.01" y2="16"></line>
+    </svg>
+    <div class="small flex-grow-1">{{ errorMsg }}</div>
+    <button type="button" class="btn-close" (click)="errorMsg = ''" aria-label="Close"></button>
+  </div>
+
+  <!-- Thông báo Thành Công sau khi Xác nhận tạo đơn -->
+  <div *ngIf="successResponse" class="card border-success shadow-sm mb-4">
+    <div class="card-body p-4">
+      <div class="d-flex align-items-start gap-3">
+        <div class="success-icon-box flex-shrink-0">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="text-success">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+          </svg>
+        </div>
+        <div class="flex-grow-1">
+          <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-1">
+            <h5 class="fw-bold text-success mb-0">Đơn Hàng AI Đã Tạo Thành Công & Đã Trừ Kho!</h5>
+            <span class="badge bg-success px-2.5 py-1">Mã: {{ successResponse.orderCode }}</span>
+          </div>
+          <p class="text-muted small mb-3">
+            Hệ thống đã tự động tạo khách hàng, trừ số lượng tồn kho sản phẩm tương ứng và gửi thông điệp vào bảng <code>OutboxMessages</code> để đồng bộ tự động sang Google Sheets.
+          </p>
+          <div class="row g-2 mb-3 bg-light p-2.5 rounded-3 border">
+            <div class="col-sm-4">
+              <span class="text-muted small d-block">Khách hàng:</span>
+              <strong class="text-dark">{{ successResponse.customerName }}</strong>
+            </div>
+            <div class="col-sm-4">
+              <span class="text-muted small d-block">Tổng tiền đơn:</span>
+              <strong class="text-primary">{{ successResponse.totalAmount | number }} đ</strong>
+            </div>
+            <div class="col-sm-4">
+              <span class="text-muted small d-block">Google Sheets Outbox:</span>
+              <span class="badge bg-success-subtle text-success border border-success-subtle d-inline-flex align-items-center gap-1">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                Đã xếp hàng đồng bộ
+              </span>
+            </div>
+          </div>
+          <div class="d-flex flex-wrap gap-2">
+            <a routerLink="/orders" class="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-1">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="9" cy="21" r="1"></circle>
+                <circle cx="20" cy="21" r="1"></circle>
+                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+              </svg>
+              Xem danh sách Đơn hàng
+            </a>
+            <a routerLink="/google-sheets" class="btn btn-outline-success btn-sm d-inline-flex align-items-center gap-1">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="3" y1="9" x2="21" y2="9"></line>
+                <line x1="3" y1="15" x2="21" y2="15"></line>
+                <line x1="9" y1="3" x2="9" y2="21"></line>
+                <line x1="15" y1="3" x2="15" y2="21"></line>
+              </svg>
+              Xem Outbox & Google Sheets
+            </a>
+            <button class="btn btn-primary btn-sm ms-auto" (click)="resetScan()">
+              Quét thêm hóa đơn mới
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Khu Vực Chính 2 Cột: Bên trái Nhập/Camera, Bên phải Kết quả AI -->
+  <div class="row g-4">
+    <!-- CỘT BÊN TRÁI: CAMERA & UPLOAD -->
+    <div class="col-lg-5">
+      <div class="card shadow-sm border-light-subtle h-100">
+        <div class="card-header bg-white border-bottom py-2.5">
+          <!-- Switch Tabs: Camera / Upload -->
+          <ul class="nav nav-pills card-header-pills nav-fill">
+            <li class="nav-item">
+              <button class="nav-link btn-sm fw-medium d-flex align-items-center justify-content-center gap-1.5"
+                      [class.active]="activeTab === 'camera'"
+                      (click)="switchTab('camera')">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                  <circle cx="12" cy="13" r="4"></circle>
+                </svg>
+                Camera Trực Tiếp (IoT)
+              </button>
+            </li>
+            <li class="nav-item">
+              <button class="nav-link btn-sm fw-medium d-flex align-items-center justify-content-center gap-1.5"
+                      [class.active]="activeTab === 'upload'"
+                      (click)="switchTab('upload')">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="17 8 12 3 7 8"></polyline>
+                  <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+                Tải Ảnh Hóa Đơn Lên
+              </button>
+            </li>
+          </ul>
+        </div>
+
+        <div class="card-body p-3 d-flex flex-column">
+          <!-- TAB 1: CAMERA -->
+          <div *ngIf="activeTab === 'camera'" class="camera-wrapper flex-grow-1 d-flex flex-column">
+            <!-- Viewport Camera -->
+            <div class="camera-viewport position-relative rounded-3 overflow-hidden bg-dark mb-3">
+              <!-- Video Stream -->
+              <video #videoElement class="w-100 h-100 object-fit-cover" [class.d-none]="!isCameraActive" autoplay playsinline muted></video>
+
+              <!-- Laser scanning line animation khi camera đang mở -->
+              <div *ngIf="isCameraActive" class="scan-laser-line"></div>
+
+              <!-- Reticle / Target corners -->
+              <div *ngIf="isCameraActive" class="scanner-frame-overlay">
+                <div class="frame-corner top-left"></div>
+                <div class="frame-corner top-right"></div>
+                <div class="frame-corner bottom-left"></div>
+                <div class="frame-corner bottom-right"></div>
+                <div class="scan-instruction-hint">Căn chỉnh phiếu hóa đơn vào khung</div>
+              </div>
+
+              <!-- Camera Off / Placeholder -->
+              <div *ngIf="!isCameraActive && !previewImageUrl" class="camera-placeholder d-flex flex-column align-items-center justify-content-center p-4 text-center text-white">
+                <div class="camera-icon-circle mb-3">
+                  <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                    <circle cx="12" cy="13" r="4"></circle>
+                  </svg>
+                </div>
+                <h6 class="fw-semibold text-white mb-1">Camera Chưa Khởi Động</h6>
+                <p class="text-light-50 small mb-3">
+                  Bật camera trên thiết bị hoặc trạm quét IoT để chụp trực tiếp hóa đơn bán lẻ hoặc phiếu gửi hàng.
+                </p>
+                <button class="btn btn-primary btn-sm px-3 d-flex align-items-center gap-1.5" (click)="startCamera()">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                  </svg>
+                  Bật Camera Ngay
+                </button>
+              </div>
+
+              <!-- Preview ảnh đã chụp / canvas blob -->
+              <div *ngIf="!isCameraActive && previewImageUrl" class="image-preview-container h-100 w-100">
+                <img [src]="previewImageUrl" alt="Captured Invoice" class="w-100 h-100 object-fit-contain" />
+              </div>
+
+              <!-- Hidden Canvas để capture frame -->
+              <canvas #canvasElement class="d-none"></canvas>
+            </div>
+
+            <!-- Lỗi camera nếu có -->
+            <div *ngIf="cameraError" class="alert alert-warning py-2 small mb-3">
+              {{ cameraError }}
+            </div>
+
+            <!-- Nút điều khiển Camera -->
+            <div class="d-flex gap-2 mt-auto">
+              <button *ngIf="!isCameraActive && previewImageUrl" class="btn btn-outline-secondary btn-sm flex-fill" (click)="startCamera()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1">
+                  <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                </svg>
+                Bật lại Camera
+              </button>
+              <button *ngIf="isCameraActive" class="btn btn-danger btn-sm flex-fill" (click)="stopCamera()">
+                Tắt Camera
+              </button>
+              <button *ngIf="isCameraActive" class="btn btn-success btn-sm flex-fill d-flex align-items-center justify-content-center gap-1.5 shadow-sm" (click)="captureAndScan()" [disabled]="scanning">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                <span class="fw-semibold">Chụp & Quét AI</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- TAB 2: UPLOAD FILE -->
+          <div *ngIf="activeTab === 'upload'" class="upload-wrapper flex-grow-1 d-flex flex-column">
+            <!-- Drop Zone -->
+            <div class="drop-zone flex-grow-1 rounded-3 p-4 d-flex flex-column align-items-center justify-content-center text-center mb-3"
+                 (dragover)="onDragOver($event)"
+                 (drop)="onDropFile($event)">
+              
+              <!-- Nếu đã có ảnh xem trước -->
+              <div *ngIf="previewImageUrl" class="preview-box w-100 mb-2">
+                <img [src]="previewImageUrl" alt="Uploaded Invoice" class="img-fluid rounded border shadow-sm max-h-250 object-fit-contain" />
+                <div class="mt-2 small text-muted text-truncate">{{ selectedFile?.name || 'Ảnh hóa đơn' }}</div>
+              </div>
+
+              <!-- Nếu chưa có ảnh -->
+              <div *ngIf="!previewImageUrl">
+                <div class="upload-icon-circle mb-3">
+                  <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                  </svg>
+                </div>
+                <h6 class="fw-semibold text-dark mb-1">Kéo thả ảnh hóa đơn vào đây</h6>
+                <p class="text-muted small mb-3">
+                  Hỗ trợ định dạng JPG, PNG, WEBP chụp từ điện thoại hoặc hóa đơn điện tử
+                </p>
+              </div>
+
+              <input type="file" #fileInput (change)="onFileSelected($event)" accept="image/*" class="d-none" />
+              <button class="btn btn-outline-primary btn-sm px-3" (click)="fileInput.click()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                  <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                  <polyline points="21 15 16 10 5 21"></polyline>
+                </svg>
+                Chọn tệp từ máy tính
+              </button>
+            </div>
+
+            <!-- Nút quét lại file nếu đã chọn -->
+            <button *ngIf="selectedFile && !scanning" class="btn btn-primary btn-sm w-100 d-flex align-items-center justify-content-center gap-1.5" (click)="executeScan(selectedFile)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+              </svg>
+              Bóc tách lại bằng AI
+            </button>
+          </div>
+
+          <!-- Thông tin IoT Station Hardware Tip -->
+          <div class="iot-tip-box mt-3 p-2.5 rounded-2 bg-light border">
+            <div class="d-flex align-items-start gap-2">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-primary flex-shrink-0 mt-0.5">
+                <rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect>
+                <rect x="9" y="9" width="6" height="6"></rect>
+                <line x1="9" y1="1" x2="9" y2="4"></line>
+                <line x1="15" y1="1" x2="15" y2="4"></line>
+                <line x1="9" y1="20" x2="9" y2="23"></line>
+                <line x1="15" y1="20" x2="15" y2="23"></line>
+                <line x1="20" y1="9" x2="23" y2="9"></line>
+                <line x1="20" y1="14" x2="23" y2="14"></line>
+                <line x1="1" y1="9" x2="4" y2="9"></line>
+                <line x1="1" y1="14" x2="4" y2="14"></line>
+              </svg>
+              <div style="font-size: 0.775rem;" class="text-muted">
+                <strong class="text-dark">Kịch bản IoT Giai đoạn 2:</strong> Thiết bị ESP32-CAM gắn tại băng chuyền có thể POST trực tiếp ảnh tới <code>/api/iot/orders/scan-and-create</code> để tạo đơn tự động không cần qua giao diện web!
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CỘT BÊN PHẢI: KẾT QUẢ BÓC TÁCH AI & XÁC NHẬN ĐƠN -->
+    <div class="col-lg-7">
+      <div class="card shadow-sm border-light-subtle h-100 d-flex flex-column">
+        <!-- Card Header -->
+        <div class="card-header bg-white border-bottom py-2.5 d-flex align-items-center justify-content-between">
+          <div class="d-flex align-items-center gap-2">
+            <h6 class="fw-bold text-dark mb-0">Dữ Liệu Hóa Đơn Trích Xuất AI</h6>
+            <span *ngIf="scannedResult" class="badge bg-success-subtle text-success border border-success-subtle px-2 py-0.5 small">
+              {{ scannedResult.aiConfidence }}% Tin cậy
+            </span>
+          </div>
+          <span *ngIf="scannedResult" class="text-muted small">
+            Nguồn: <span class="badge bg-secondary-subtle text-secondary">{{ scannedResult.aiSource }}</span>
+          </span>
+        </div>
+
+        <div class="card-body p-3 flex-grow-1 d-flex flex-column">
+          <!-- 1. Trạng thái Đang Xử Lý AI -->
+          <div *ngIf="scanning" class="scanning-state flex-grow-1 d-flex flex-column align-items-center justify-content-center text-center p-5">
+            <div class="ai-pulse-spinner mb-3">
+              <div class="spinner-grow text-primary" role="status"></div>
+            </div>
+            <h5 class="fw-bold text-dark mb-1">AI Vision Đang Đọc Hóa Đơn...</h5>
+            <p class="text-muted small mb-3" style="max-width: 360px;">
+              Hệ thống đang gửi ảnh tới Gemini 2.5 Flash để bóc tách thực thể khách hàng, số điện thoại, sản phẩm và tự động khớp tồn kho.
+            </p>
+            <div class="progress w-50" style="height: 6px;">
+              <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary w-100"></div>
+            </div>
+          </div>
+
+          <!-- 2. Trạng thái Chưa Có Dữ Liệu (Placeholder Hướng Dẫn) -->
+          <div *ngIf="!scanning && !scannedResult && !successResponse" class="empty-state flex-grow-1 d-flex flex-column align-items-center justify-content-center text-center p-5 text-muted">
+            <div class="empty-icon-circle mb-3">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                <line x1="8" y1="21" x2="16" y2="21"></line>
+                <line x1="12" y1="17" x2="12" y2="21"></line>
+              </svg>
+            </div>
+            <h6 class="fw-semibold text-dark mb-1">Chưa Có Hóa Đơn Nào Được Quét</h6>
+            <p class="text-muted small mb-4" style="max-width: 380px;">
+              Hãy chụp ảnh từ camera hoặc tải ảnh hóa đơn giấy/phiếu gửi hàng lên bên trái, hoặc nhấn nút <strong>"Mẫu thử nghiệm nhanh"</strong> ở góc trên để trải nghiệm ngay.
+            </p>
+            <div class="row g-2 w-100" style="max-width: 440px;">
+              <div class="col-4 text-center">
+                <div class="workflow-step-badge mb-1">1</div>
+                <div style="font-size: 0.725rem;" class="fw-medium text-dark">Chụp hóa đơn</div>
+              </div>
+              <div class="col-4 text-center">
+                <div class="workflow-step-badge mb-1">2</div>
+                <div style="font-size: 0.725rem;" class="fw-medium text-dark">AI bóc tách</div>
+              </div>
+              <div class="col-4 text-center">
+                <div class="workflow-step-badge mb-1">3</div>
+                <div style="font-size: 0.725rem;" class="fw-medium text-dark">Trừ kho & Sync Sheets</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. Kết Quả Quét Được (Cho phép Xem, Sửa và Xác Nhận) -->
+          <div *ngIf="!scanning && scannedResult" class="scanned-content flex-grow-1 d-flex flex-column">
+            <!-- Thông tin Khách Hàng trích xuất được -->
+            <div class="card bg-light-subtle border mb-3">
+              <div class="card-body p-3">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                  <span class="text-uppercase fw-bold text-muted" style="font-size: 0.6875rem; letter-spacing: 0.05em;">
+                    THÔNG TIN KHÁCH HÀNG (AI NHẬN DẠNG)
+                  </span>
+                  <span *ngIf="scannedResult.invoiceCode" class="badge bg-light text-dark border">
+                    HĐ: {{ scannedResult.invoiceCode }}
+                  </span>
+                </div>
+                <div class="row g-2">
+                  <div class="col-sm-5">
+                    <label class="form-label text-muted small mb-1">Tên khách hàng</label>
+                    <input type="text" [(ngModel)]="scannedResult.customerName" class="form-control form-control-sm bg-white fw-medium" placeholder="Tên khách hàng" />
+                  </div>
+                  <div class="col-sm-3">
+                    <label class="form-label text-muted small mb-1">Số điện thoại</label>
+                    <input type="text" [(ngModel)]="scannedResult.phone" class="form-control form-control-sm bg-white" placeholder="SĐT" />
+                  </div>
+                  <div class="col-sm-4">
+                    <label class="form-label text-muted small mb-1">Địa chỉ giao hàng</label>
+                    <input type="text" [(ngModel)]="scannedResult.address" class="form-control form-control-sm bg-white" placeholder="Địa chỉ" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bảng Danh Sách Sản Phẩm Nhận Diện & Đối Soát Kho -->
+            <div class="table-responsive border rounded-3 mb-3 flex-grow-1 bg-white">
+              <table class="table table-hover align-middle mb-0" style="font-size: 0.8125rem;">
+                <thead class="table-light">
+                  <tr>
+                    <th scope="col" class="ps-3" style="width: 40%;">Tên món / Khớp kho</th>
+                    <th scope="col" class="text-center" style="width: 15%;">Số lượng</th>
+                    <th scope="col" class="text-end" style="width: 20%;">Đơn giá</th>
+                    <th scope="col" class="text-end" style="width: 20%;">Thành tiền</th>
+                    <th scope="col" class="text-center" style="width: 5%;"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let item of scannedResult.items; let idx = index">
+                    <td class="ps-3">
+                      <div class="fw-semibold text-dark">{{ item.productName }}</div>
+                      <!-- Trạng thái khớp kho -->
+                      <div class="d-flex align-items-center gap-1 mt-0.5">
+                        <span *ngIf="item.isMatched" class="badge bg-success-subtle text-success border border-success-subtle" style="font-size: 0.65rem;">
+                          ✓ Đã khớp kho (Tồn: {{ item.currentStock }})
+                        </span>
+                        <span *ngIf="!item.isMatched" class="badge bg-warning-subtle text-warning border border-warning-subtle" style="font-size: 0.65rem;">
+                          ⚡ Tự động gán sản phẩm tương đương
+                        </span>
+                      </div>
+                    </td>
+                    <td class="text-center">
+                      <input type="number" min="1" [(ngModel)]="item.quantity" (ngModelChange)="recalculateTotal()" class="form-control form-control-sm text-center mx-auto" style="width: 60px;" />
+                    </td>
+                    <td class="text-end text-muted">
+                      {{ item.unitPrice | number }} đ
+                    </td>
+                    <td class="text-end fw-semibold text-dark">
+                      {{ (item.quantity * item.unitPrice) | number }} đ
+                    </td>
+                    <td class="text-center pe-2">
+                      <button class="btn btn-link text-danger p-0" (click)="removeItem(idx)" title="Xóa món này">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <line x1="18" y1="6" x2="6" y2="18"></line>
+                          <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Tổng Tiền & Nút Xác Nhận -->
+            <div class="d-flex flex-wrap align-items-center justify-content-between p-3 bg-light rounded-3 border mt-auto">
+              <div>
+                <span class="text-muted small d-block">Tổng giá trị đơn hàng:</span>
+                <span class="h4 fw-bold text-primary mb-0">{{ scannedResult.totalAmount | number }} đ</span>
+              </div>
+
+              <div class="d-flex align-items-center gap-2">
+                <button class="btn btn-outline-secondary btn-sm" (click)="resetScan()" [disabled]="confirming">
+                  Hủy bỏ
+                </button>
+                <button class="btn btn-primary btn-sm px-3 d-flex align-items-center gap-1.5 shadow-sm" (click)="onConfirmOrder()" [disabled]="confirming || scannedResult.items.length === 0">
+                  <span *ngIf="confirming" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                  <svg *ngIf="!confirming" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                  <span class="fw-semibold">Xác Nhận &amp; Nhập Đơn Ngay</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

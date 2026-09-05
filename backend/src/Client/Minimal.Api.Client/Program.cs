@@ -189,6 +189,7 @@ app.MapAuthEndpoints();
 app.MapGoogleSheetEndpoints();
 app.MapDashboardEndpoints();
 app.MapAdminStoreEndpoints();
+app.MapAiScannerEndpoints();
 app.MapHealthChecks("/health");
 
 // Auto migrate — idempotent, an toàn cho mọi environment
