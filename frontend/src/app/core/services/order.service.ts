@@ -12,7 +12,7 @@ export class OrderService {
   private http = inject(HttpClient);
   private apiUrl = `${environment.apiUrl}/orders`;
 
-  getAll(page: number = 1, pageSize: number = 10, search?: string, status?: string): Observable<PagedResult<OrderSummary>> {
+  getAll(page: number = 1, pageSize: number = 10, search?: string, status?: string, date?: string): Observable<PagedResult<OrderSummary>> {
     let params = new HttpParams()
       .set('page', page.toString())
       .set('pageSize', pageSize.toString());
@@ -22,6 +22,9 @@ export class OrderService {
     }
     if (status) {
       params = params.set('status', status);
+    }
+    if (date) {
+      params = params.set('date', date);
     }
 
     return this.http.get<PagedResult<OrderSummary>>(this.apiUrl, { params });

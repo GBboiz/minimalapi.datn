@@ -93,7 +93,7 @@ export class OrderDetailComponent implements OnInit {
       case 'Confirmed': return 'badge-confirmed';
       case 'Completed': return 'badge-completed';
       case 'Cancelled': return 'badge-cancelled';
-      default: return 'bg-secondary';
+      default: return 'badge-default';
     }
   }
 
@@ -105,5 +105,10 @@ export class OrderDetailComponent implements OnInit {
       case 'Cancelled': return 'Đã hủy';
       default: return status;
     }
+  }
+
+  formatPrice(val: number | null | undefined): string {
+    if (val === null || val === undefined || isNaN(val)) return '0';
+    return Math.round(val).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
   }
 }
