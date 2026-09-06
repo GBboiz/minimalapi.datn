@@ -40,7 +40,52 @@ public sealed class CreateOrderHandler(
                 product.Id,
                 product.Name.Value,
                 product.Price,
-                itemReq.Quantity));
+                itemReq.Quantity,
+                isGift: itemReq.IsGift));
+
+            // Tự động tặng quà kèm theo cấu hình sản phẩm nếu chưa có trong đơn
+            if (!itemReq.IsGift && product.GiftProductId is not null)
+            {
+                var giftId = product.GiftProductId.Value;
+                var alreadyInRequest = request.Items.Any(i => i.ProductId == giftId.Value && i.IsGift);
+                var alreadyInOrder = orderItems.Any(i => i.ProductId == giftId && i.IsGift);
+
+                if (!alreadyInRequest && !alreadyInOrder)
+                {
+                    var giftProduct = await productRepo.GetByIdAsync(giftId, storeId, ct);
+                    if (giftProduct is not null && giftProduct.IsActive)
+                    {
+                        orderItems.Add(OrderItem.Create(
+                            orderId,
+                            giftProduct.Id,
+                            giftProduct.Name.Value,
+                            giftProduct.Price,
+                            itemReq.Quantity,
+                            isGift: true));
+                    }
+                }
+            }
+        }
+
+        // Kiểm tra và giữ chỗ tồn kho dự báo (ReserveStock) cho từng sản phẩm (kể cả quà tặng)
+        var productQuantities = orderItems
+            .GroupBy(i => i.ProductId)
+            .Select(g => new { ProductId = g.Key, TotalQuantity = g.Sum(x => x.Quantity) })
+            .ToList();
+
+        foreach (var pq in productQuantities)
+        {
+            var product = await productRepo.GetByIdAsync(pq.ProductId, storeId, ct);
+            if (product is null)
+                return Result<Guid>.Failure("Sản phẩm không tồn tại.");
+
+            if (product.ForecastStock < pq.TotalQuantity)
+            {
+                return Result<Guid>.Failure(
+                    $"Sản phẩm '{product.Name.Value}' không đủ tồn kho dự báo (khả dụng: {product.ForecastStock}, cần: {pq.TotalQuantity}).");
+            }
+
+            product.ReserveStock(pq.TotalQuantity);
         }
 
         // Sinh mã đơn ngẫu nhiên theo ngày ORD-YYYYMMDD-XXXX
@@ -52,7 +97,7 @@ public sealed class CreateOrderHandler(
             code = $"ORD-{datePrefix}-{randomSuffix}";
         } while (await orderRepo.ExistsByCodeAsync(code, storeId, ct));
 
-        var order = Order.Create(storeId, customer.Id, code, orderItems);
+        var order = Order.Create(storeId, customer.Id, code, orderItems, request.DiscountPercent, request.DiscountAmount);
         orderRepo.Add(order);
 
         // Transactional Outbox Pattern: Lưu OutboxMessage cùng transaction với Order
@@ -68,7 +113,10 @@ public sealed class CreateOrderHandler(
             order.TotalAmount.Amount,
             order.TotalAmount.Currency,
             order.Status.ToString(),
-            order.CreatedAt);
+            order.CreatedAt,
+            order.SubTotal.Amount,
+            order.DiscountPercent,
+            order.DiscountAmount.Amount);
 
         var outboxMessage = OutboxMessage.Create(
             storeId,

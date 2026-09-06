@@ -1,0 +1,13 @@
+.promo-chip {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+  }
+}
+
+.table-warning-subtle {
+  background-color: #fff9db !important;
+}

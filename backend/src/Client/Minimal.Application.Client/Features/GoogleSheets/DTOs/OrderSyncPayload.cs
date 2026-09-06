@@ -10,5 +10,8 @@ public sealed record OrderSyncPayload(
     decimal TotalAmount,
     string Currency,
     string Status,
-    DateTime CreatedAt
+    DateTime CreatedAt,
+    decimal SubTotal = 0,
+    decimal DiscountPercent = 0,
+    decimal DiscountAmount = 0
 );

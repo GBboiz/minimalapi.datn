@@ -1,0 +1,42 @@
+.page-container {
+  padding: 1.5rem 0;
+}
+
+.preset-card {
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  background-color: #ffffff;
+  position: relative;
+  overflow: hidden;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+    border-color: #0d6efd !important;
+
+    .preset-action {
+      color: #0b5ed7 !important;
+      text-decoration: underline;
+    }
+  }
+}
+
+.search-input-group {
+  position: relative;
+
+  .search-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6c757d;
+    pointer-events: none;
+  }
+}
+
+.empty-state {
+  padding: 2rem;
+  .empty-icon {
+    display: block;
+  }
+}

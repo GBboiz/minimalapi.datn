@@ -22,28 +22,38 @@ public sealed class ConfirmOrderHandler(
         if (order.Status != OrderStatus.Pending)
             return Result<Guid>.Failure($"Không thể xác nhận đơn hàng đang ở trạng thái {order.Status}.");
 
-        // 1. Kiểm tra tồn kho cho tất cả sản phẩm trước khi trừ
+        // 1. Nhóm theo ProductId và kiểm tra tồn kho cho tất cả sản phẩm (kể cả quà tặng) trước khi trừ
+        var groupedItems = order.Items
+            .GroupBy(i => i.ProductId)
+            .Select(g => new
+            {
+                ProductId = g.Key,
+                ProductName = g.First().ProductName,
+                TotalQuantity = g.Sum(x => x.Quantity)
+            })
+            .ToList();
+
         var productsToUpdate = new List<(Product Product, int Quantity)>();
 
-        foreach (var item in order.Items)
+        foreach (var item in groupedItems)
         {
             var product = await productRepo.GetByIdAsync(item.ProductId, storeId, ct);
             if (product is null)
                 return Result<Guid>.Failure($"Sản phẩm '{item.ProductName}' không còn tồn tại.");
 
-            if (product.StockQuantity < item.Quantity)
+            if (product.StockQuantity < item.TotalQuantity)
             {
                 return Result<Guid>.Failure(
-                    $"Sản phẩm '{product.Name.Value}' không đủ tồn kho (còn {product.StockQuantity}, cần {item.Quantity}).");
+                    $"Sản phẩm '{product.Name.Value}' không đủ tồn kho (còn {product.StockQuantity}, cần {item.TotalQuantity}).");
             }
 
-            productsToUpdate.Add((product, item.Quantity));
+            productsToUpdate.Add((product, item.TotalQuantity));
         }
 
-        // 2. Trừ tồn kho
+        // 2. Trừ tồn kho thực tế và giải phóng tồn dự báo đã giữ chỗ
         foreach (var (product, quantity) in productsToUpdate)
         {
-            product.AdjustStock(-quantity);
+            product.ConfirmReservedStock(quantity);
         }
 
         // 3. Đổi trạng thái sang Confirmed

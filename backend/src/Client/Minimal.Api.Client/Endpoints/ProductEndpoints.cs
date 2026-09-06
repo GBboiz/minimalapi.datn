@@ -6,9 +6,12 @@ using MinimalAPI.Application.Features.Products.DeleteProduct;
 using MinimalAPI.Application.Features.Products.DTOs;
 using MinimalAPI.Application.Features.Products.GetProduct;
 using MinimalAPI.Application.Features.Products.GetProducts;
+using MinimalAPI.Application.Features.Products.SetGiftProduct;
 using MinimalAPI.Application.Features.Products.UpdateProduct;
 
 namespace MinimalAPI.Api.Endpoints;
+
+public record SetGiftRequest(Guid? GiftProductId);
 
 /// <summary>Định nghĩa các endpoint REST cho Product (/api/products).</summary>
 public static class ProductEndpoints
@@ -73,6 +76,18 @@ public static class ProductEndpoints
         .WithSummary("Cập nhật sản phẩm")
         .Produces<Guid>()
         .Produces(StatusCodes.Status404NotFound)
+        .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
+
+        group.MapPut("/{id:guid}/gift", async Task<IResult> (Guid id, [FromBody] SetGiftRequest request, ISender sender) =>
+        {
+            var result = await sender.Send(new SetGiftProductCommand(id, request.GiftProductId));
+            return result.IsSuccess
+                ? TypedResults.Ok(result.Value)
+                : TypedResults.BadRequest(new { error = result.Error });
+        })
+        .WithName("SetGiftProduct")
+        .WithSummary("Gán hoặc gỡ sản phẩm quà tặng kèm")
+        .Produces<Guid>()
         .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
 
         group.MapDelete("/{id:guid}", async Task<IResult> (Guid id, ISender sender) =>

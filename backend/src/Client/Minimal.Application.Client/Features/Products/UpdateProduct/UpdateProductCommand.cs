@@ -20,4 +20,6 @@ public record UpdateProductCommand(
     /// <summary>Mô tả sản phẩm (không bắt buộc).</summary>
     string? Description,
     /// <summary>Trạng thái sản phẩm (hoạt động/ngưng).</summary>
-    bool IsActive = true) : IRequest<Result<Guid>>;
+    bool IsActive = true,
+    /// <summary>Mã sản phẩm quà tặng kèm (không bắt buộc).</summary>
+    Guid? GiftProductId = null) : IRequest<Result<Guid>>;

@@ -45,6 +45,10 @@ public sealed class OrderItemConfiguration : IEntityTypeConfiguration<OrderItem>
             .HasColumnName("quantity")
             .IsRequired();
 
+        builder.Property(i => i.IsGift)
+            .HasColumnName("is_gift")
+            .HasDefaultValue(false);
+
         builder.HasIndex(i => i.OrderId);
         builder.HasIndex(i => i.ProductId);
     }

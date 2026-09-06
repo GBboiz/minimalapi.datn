@@ -5,6 +5,7 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { ProductService } from '../../../core/services/product.service';
 import { CategoryService } from '../../../core/services/category.service';
 import { Category } from '../../../core/models/category.model';
+import { Product } from '../../../core/models/product.model';
 
 @Component({
   selector: 'app-product-form',
@@ -21,6 +22,7 @@ export class ProductFormComponent implements OnInit {
 
   productForm: FormGroup;
   categories: Category[] = [];
+  allProducts: Product[] = [];
   isEditMode = false;
   productId: string | null = null;
   loading = false;
@@ -37,12 +39,14 @@ export class ProductFormComponent implements OnInit {
       currency: ['VND', Validators.required],
       categoryId: ['', Validators.required],
       description: [''],
+      giftProductId: [null],
       isActive: [true]
     });
   }
 
   ngOnInit(): void {
     this.loadCategories();
+    this.loadAllProducts();
 
     this.productId = this.route.snapshot.paramMap.get('id');
     if (this.productId) {
@@ -59,6 +63,18 @@ export class ProductFormComponent implements OnInit {
     });
   }
 
+  loadAllProducts(): void {
+    this.productService.getAll(1, 100).subscribe({
+      next: (result) => {
+        this.allProducts = result.items;
+      }
+    });
+  }
+
+  get availableGiftProducts(): Product[] {
+    return this.allProducts.filter(p => !this.productId || p.id !== this.productId);
+  }
+
   loadProduct(id: string): void {
     this.loading = true;
     this.productService.getById(id).subscribe({
@@ -71,6 +87,7 @@ export class ProductFormComponent implements OnInit {
           currency: product.currency,
           categoryId: product.categoryId,
           description: product.description,
+          giftProductId: product.giftProductId || null,
           isActive: product.isActive
         });
         this.loading = false;

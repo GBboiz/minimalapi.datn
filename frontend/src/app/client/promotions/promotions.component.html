@@ -1,0 +1,316 @@
+<div class="page-container">
+  <!-- Page Header -->
+  <div class="page-header d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="page-title d-flex align-items-center gap-2 m-0">
+        <span class="header-icon">🏷️</span>
+        Quản lý Khuyến mãi
+      </h1>
+      <p class="text-muted m-0 mt-1">Thiết lập chiết khấu theo % (5%, 10%...) hoặc số tiền cố định (100.000đ, 200.000đ...)</p>
+    </div>
+    <button class="btn btn-primary d-flex align-items-center gap-2" (click)="openCreateModal()">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="12" y1="5" x2="12" y2="19"></line>
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+      </svg>
+      Tạo khuyến mãi mới
+    </button>
+  </div>
+
+  <!-- Thông báo thành công -->
+  <div class="alert alert-success d-flex align-items-center gap-2 mb-4" *ngIf="successMessage">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+      <polyline points="22 4 12 14.01 9 11.01"></polyline>
+    </svg>
+    <span>{{ successMessage }}</span>
+  </div>
+
+  <!-- Preset Hover Showcase Cards (Gợi ý tạo sẵn) -->
+  <div class="preset-section mb-4">
+    <div class="d-flex align-items-center justify-content-between mb-2">
+      <span class="fw-semibold text-dark d-flex align-items-center gap-2">
+        <span>⚡</span> Gợi ý tạo nhanh khuyến mãi phổ biến (Rê chuột để xem chi tiết & tạo sẵn):
+      </span>
+    </div>
+    <div class="row g-3">
+      <div class="col-md-3 col-sm-6" *ngFor="let p of presets">
+        <div class="card preset-card h-100 border" (click)="openCreateModal(p)">
+          <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <span class="badge bg-{{p.color}}-subtle text-{{p.color}} border border-{{p.color}}-subtle font-monospace px-2 py-1 fs-6">
+                {{ p.badge }}
+              </span>
+              <span class="badge bg-light text-muted border font-monospace">{{ p.code }}</span>
+            </div>
+            <h6 class="card-title fw-bold text-dark mb-1">{{ p.name }}</h6>
+            <p class="card-text text-muted small mb-3">{{ p.description }}</p>
+            <div class="preset-action d-flex align-items-center gap-1 text-primary fw-medium small">
+              <span>+ Tạo theo mẫu này</span>
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Search & Filter Card -->
+  <div class="card mb-4 filter-card">
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-7">
+          <div class="search-input-group">
+            <span class="search-icon">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+            </span>
+            <input
+              type="text"
+              class="form-control ps-5"
+              placeholder="Tìm theo mã KM hoặc tên chương trình..."
+              [(ngModel)]="searchTerm"
+            />
+          </div>
+        </div>
+        <div class="col-md-5">
+          <select class="form-select" [(ngModel)]="filterType">
+            <option value="ALL">Tất cả hình thức giảm giá</option>
+            <option value="1">Chiết khấu theo phần trăm (%)</option>
+            <option value="2">Giảm tiền mặt cố định (VND)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div class="text-center py-5" *ngIf="loading">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Đang tải...</span>
+    </div>
+    <p class="text-muted mt-2">Đang tải danh sách khuyến mãi...</p>
+  </div>
+
+  <!-- Table Card -->
+  <div class="card table-card" *ngIf="!loading">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th class="text-center" style="width: 60px">STT</th>
+            <th>Mã khuyến mãi</th>
+            <th>Tên chương trình</th>
+            <th>Hình thức giảm giá</th>
+            <th>Mức giảm</th>
+            <th>Mô tả</th>
+            <th>Trạng thái</th>
+            <th class="text-end" style="width: 160px">Thao tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let p of filteredPromotions; let i = index">
+            <td class="text-center text-muted">{{ i + 1 }}</td>
+            <td>
+              <span class="badge bg-primary-subtle text-primary font-monospace fs-6 px-2 py-1 border border-primary-subtle">
+                {{ p.code }}
+              </span>
+            </td>
+            <td>
+              <div class="fw-semibold text-dark">{{ p.name }}</div>
+            </td>
+            <td>
+              <span *ngIf="p.discountType === DiscountTypeEnum.Percentage" class="badge bg-info-subtle text-info border border-info-subtle">
+                Phần trăm (%)
+              </span>
+              <span *ngIf="p.discountType === DiscountTypeEnum.FixedAmount" class="badge bg-success-subtle text-success border border-success-subtle">
+                Tiền mặt (VND)
+              </span>
+            </td>
+            <td class="fw-bold fs-6">
+              <span *ngIf="p.discountType === DiscountTypeEnum.Percentage" class="text-danger">
+                -{{ p.value }}%
+              </span>
+              <span *ngIf="p.discountType === DiscountTypeEnum.FixedAmount" class="text-success">
+                -{{ p.value | number:'1.0-0' }}đ
+              </span>
+            </td>
+            <td class="text-muted small">
+              {{ p.description || '—' }}
+            </td>
+            <td>
+              <button
+                class="btn btn-sm"
+                [ngClass]="p.isActive ? 'btn-success' : 'btn-outline-secondary'"
+                (click)="toggleActive(p)"
+                title="Bấm để bật/tắt khuyến mãi">
+                {{ p.isActive ? 'Đang bật' : 'Đã tắt' }}
+              </button>
+            </td>
+            <td class="text-end">
+              <div class="btn-group btn-group-sm">
+                <button
+                  class="btn btn-outline-primary"
+                  (click)="openEditModal(p)"
+                  title="Chỉnh sửa">
+                  Sửa
+                </button>
+                <button
+                  class="btn btn-outline-danger"
+                  (click)="deletePromotion(p)"
+                  title="Xóa khuyến mãi">
+                  Xóa
+                </button>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Empty State -->
+          <tr *ngIf="filteredPromotions.length === 0">
+            <td colspan="8" class="text-center py-5 text-muted">
+              <div class="empty-state">
+                <span class="empty-icon fs-1">🏷️</span>
+                <p class="mt-2 mb-0">Chưa có khuyến mãi nào phù hợp. Hãy tạo mới hoặc chọn từ mẫu gợi ý phía trên!</p>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Modal Tạo / Sửa Khuyến Mãi -->
+  <div class="modal-backdrop fade show" *ngIf="showModal" (click)="closeModal()"></div>
+  <div class="modal fade show d-block" tabindex="-1" *ngIf="showModal">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content shadow-lg border-0">
+        <div class="modal-header border-bottom">
+          <h5 class="modal-title d-flex align-items-center gap-2">
+            <span>🏷️</span> {{ isEditing ? 'Chỉnh sửa khuyến mãi' : 'Tạo khuyến mãi mới' }}
+          </h5>
+          <button type="button" class="btn-close" (click)="closeModal()"></button>
+        </div>
+        <div class="modal-body p-4">
+          <!-- Alert Error -->
+          <div class="alert alert-danger mb-3" *ngIf="errorMessage">
+            {{ errorMessage }}
+          </div>
+
+          <!-- Mã khuyến mãi -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Mã khuyến mãi <span class="text-danger">*</span></label>
+            <input
+              type="text"
+              class="form-control font-monospace"
+              placeholder="VD: KM5, KM10, KM100K..."
+              [(ngModel)]="formModel.code"
+              [disabled]="isEditing"
+              style="text-transform: uppercase;"
+            />
+            <div class="form-text" *ngIf="!isEditing">Mã viết liền không dấu, dùng để áp dụng khi lên đơn hàng.</div>
+          </div>
+
+          <!-- Tên chương trình -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Tên chương trình <span class="text-danger">*</span></label>
+            <input
+              type="text"
+              class="form-control"
+              placeholder="VD: Giảm 10% khách quen, Giảm 100k đơn đầu..."
+              [(ngModel)]="formModel.name"
+            />
+          </div>
+
+          <!-- Hình thức giảm giá -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Hình thức giảm giá <span class="text-danger">*</span></label>
+            <div class="d-flex gap-3">
+              <div class="form-check">
+                <input
+                  class="form-check-input"
+                  type="radio"
+                  id="typePercentage"
+                  [value]="DiscountTypeEnum.Percentage"
+                  [(ngModel)]="formModel.discountType"
+                />
+                <label class="form-check-label" for="typePercentage">
+                  Theo phần trăm (%)
+                </label>
+              </div>
+              <div class="form-check">
+                <input
+                  class="form-check-input"
+                  type="radio"
+                  id="typeFixed"
+                  [value]="DiscountTypeEnum.FixedAmount"
+                  [(ngModel)]="formModel.discountType"
+                />
+                <label class="form-check-label" for="typeFixed">
+                  Theo số tiền mặt (VND)
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Giá trị giảm -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold">
+              Mức giảm
+              <span *ngIf="formModel.discountType === DiscountTypeEnum.Percentage">(%)</span>
+              <span *ngIf="formModel.discountType === DiscountTypeEnum.FixedAmount">(VND)</span>
+              <span class="text-danger">*</span>
+            </label>
+            <div class="input-group">
+              <input
+                type="number"
+                class="form-control"
+                [placeholder]="formModel.discountType === DiscountTypeEnum.Percentage ? 'VD: 5, 10, 15...' : 'VD: 100000, 200000...'"
+                [(ngModel)]="formModel.value"
+                min="1"
+                [max]="formModel.discountType === DiscountTypeEnum.Percentage ? 100 : 999999999"
+              />
+              <span class="input-group-text">
+                {{ formModel.discountType === DiscountTypeEnum.Percentage ? '%' : 'đ' }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Mô tả -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Mô tả chi tiết</label>
+            <textarea
+              class="form-control"
+              rows="2"
+              placeholder="Ghi chú điều kiện áp dụng..."
+              [(ngModel)]="formModel.description">
+            </textarea>
+          </div>
+
+          <!-- Kích hoạt -->
+          <div class="form-check form-switch" *ngIf="isEditing">
+            <input
+              class="form-check-input"
+              type="checkbox"
+              id="promoActive"
+              [(ngModel)]="formModel.isActive"
+            />
+            <label class="form-check-label fw-semibold" for="promoActive">
+              Kích hoạt khuyến mãi này
+            </label>
+          </div>
+        </div>
+        <div class="modal-footer border-top bg-light">
+          <button type="button" class="btn btn-secondary" (click)="closeModal()" [disabled]="saving">Hủy</button>
+          <button type="button" class="btn btn-primary d-flex align-items-center gap-2" (click)="savePromotion()" [disabled]="saving">
+            <span class="spinner-border spinner-border-sm" *ngIf="saving"></span>
+            {{ saving ? 'Đang lưu...' : (isEditing ? 'Cập nhật' : 'Tạo khuyến mãi') }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

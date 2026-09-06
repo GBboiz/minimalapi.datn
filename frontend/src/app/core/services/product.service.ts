@@ -36,7 +36,12 @@ export class ProductService {
     return this.http.put<void>(`${this.apiUrl}/${id}`, data);
   }
 
+  setGift(id: string, giftProductId: string | null): Observable<void> {
+    return this.http.put<void>(`${this.apiUrl}/${id}/gift`, { giftProductId });
+  }
+
   delete(id: string): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
 }
+

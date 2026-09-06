@@ -14,22 +14,31 @@ public sealed class GetProductHandler(IApplicationDbContext db, ICurrentStore cu
         var productId = new ProductId(request.Id);
 
         var storeId = currentStore.GetRequiredStoreId();
-        return await db.Products
+        var item = await db.Products
             .Where(p => p.Id == productId && p.StoreId == storeId)
             .Join(db.Categories,
                 p => p.CategoryId, c => c.Id,
-                (p, c) => new ProductDto(
-                    p.Id.Value,
-                    p.Name.Value,
-                    p.Sku,
-                    p.StockQuantity,
-                    p.Price.Amount,
-                    p.Price.Currency,
-                    p.CategoryId.Value,
-                    c.Name,
-                    p.Description,
-                    p.IsActive,
-                    p.CreatedAt))
+                (p, c) => new { Product = p, CategoryName = c.Name })
             .FirstOrDefaultAsync(ct);
+
+        if (item is null)
+            return null;
+
+        return new ProductDto(
+            item.Product.Id.Value,
+            item.Product.Name.Value,
+            item.Product.Sku,
+            item.Product.StockQuantity,
+            item.Product.Price.Amount,
+            item.Product.Price.Currency,
+            item.Product.CategoryId.Value,
+            item.CategoryName,
+            item.Product.Description,
+            item.Product.IsActive,
+            item.Product.CreatedAt,
+            item.Product.GiftProductId?.Value,
+            item.Product.GiftProductName,
+            item.Product.ReservedQuantity,
+            item.Product.ForecastStock);
     }
 }

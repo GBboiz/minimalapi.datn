@@ -146,6 +146,26 @@ public static class SeedData
             await context.SaveChangesAsync();
         }
 
+        // 2.2 Cấu hình quà tặng mẫu cho sản phẩm demo nếu chưa có
+        if (seedStore is not null)
+        {
+            var dell = await context.Products.FirstOrDefaultAsync(p => p.StoreId == seedStore.Id && p.Sku == "LAP-DELL-XPS13");
+            var book = await context.Products.FirstOrDefaultAsync(p => p.StoreId == seedStore.Id && p.Sku == "BOOK-CLEANCODE");
+            if (dell is not null && book is not null && dell.GiftProductId is null)
+            {
+                dell.SetGiftProduct(book.Id, book.Name.Value);
+            }
+
+            var sora = await context.Products.FirstOrDefaultAsync(p => p.StoreId == seedStore.Id && p.Sku == "SORA10-6");
+            var shirt = await context.Products.FirstOrDefaultAsync(p => p.StoreId == seedStore.Id && p.Sku == "SHIRT-MEN-001");
+            if (sora is not null && shirt is not null && sora.GiftProductId is null)
+            {
+                sora.SetGiftProduct(shirt.Id, shirt.Name.Value);
+            }
+
+            await context.SaveChangesAsync();
+        }
+
         // 3. Tạo khách hàng mẫu nếu chưa có
         if (seedStore is not null && !context.Customers.Any(c => c.StoreId == seedStore.Id))
         {
@@ -187,6 +207,18 @@ public static class SeedData
 
                 await context.SaveChangesAsync();
             }
+        }
+
+        // 7. Seed promotions mẫu nếu chưa có
+        if (seedStore is not null && !await context.Promotions.AnyAsync(p => p.StoreId == seedStore.Id))
+        {
+            var promo1 = Promotion.Create(seedStore.Id, "KM5", "Giảm 5% đơn hàng", DiscountType.Percentage, 5, "Áp dụng giảm 5% trên tổng giá trị sản phẩm");
+            var promo2 = Promotion.Create(seedStore.Id, "KM10", "Giảm 10% đơn hàng", DiscountType.Percentage, 10, "Áp dụng giảm 10% cho khách hàng thân thiết");
+            var promo3 = Promotion.Create(seedStore.Id, "KM100K", "Giảm 100.000đ", DiscountType.FixedAmount, 100000, "Giảm trực tiếp 100.000đ cho đơn hàng");
+            var promo4 = Promotion.Create(seedStore.Id, "KM200K", "Giảm 200.000đ", DiscountType.FixedAmount, 200000, "Giảm trực tiếp 200.000đ cho đơn hàng giá trị cao");
+
+            context.Promotions.AddRange(promo1, promo2, promo3, promo4);
+            await context.SaveChangesAsync();
         }
     }
 

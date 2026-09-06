@@ -33,7 +33,8 @@ public sealed class GetOrderHandler(IApplicationDbContext db, ICurrentStore curr
                 i.UnitPrice.Amount,
                 i.UnitPrice.Currency,
                 i.Quantity,
-                i.TotalPrice))
+                i.TotalPrice,
+                i.IsGift))
             .ToList();
 
         return new OrderDto(
@@ -44,6 +45,9 @@ public sealed class GetOrderHandler(IApplicationDbContext db, ICurrentStore curr
             orderWithCustomer.Customer.Address,
             orderWithCustomer.Order.Code,
             orderWithCustomer.Order.Status.ToString(),
+            orderWithCustomer.Order.SubTotal.Amount,
+            orderWithCustomer.Order.DiscountPercent,
+            orderWithCustomer.Order.DiscountAmount.Amount,
             orderWithCustomer.Order.TotalAmount.Amount,
             orderWithCustomer.Order.TotalAmount.Currency,
             orderWithCustomer.Order.CreatedAt,

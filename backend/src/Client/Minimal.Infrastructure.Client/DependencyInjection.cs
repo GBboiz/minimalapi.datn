@@ -18,11 +18,14 @@ public static class DependencyInjection
 
         // EF Core — retry on transient failures (network blip, DB restart)
         services.AddDbContext<AppDbContext>(options =>
+        {
             options.UseNpgsql(connectionString, npgsqlOptions =>
                 npgsqlOptions.EnableRetryOnFailure(
                     maxRetryCount: 3,
                     maxRetryDelay: TimeSpan.FromSeconds(5),
-                    errorCodesToAdd: null)));
+                    errorCodesToAdd: null));
+            options.ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
+        });
 
         // IApplicationDbContext — query side dùng LINQ (AsNoTracking)
         services.AddScoped<IApplicationDbContext>(sp =>
@@ -33,6 +36,7 @@ public static class DependencyInjection
         services.AddScoped<ICategoryRepository, CategoryRepository>();
         services.AddScoped<ICustomerRepository, CustomerRepository>();
         services.AddScoped<IOrderRepository, OrderRepository>();
+        services.AddScoped<IPromotionRepository, PromotionRepository>();
         services.AddScoped<IGoogleSheetConnectionRepository, GoogleSheetConnectionRepository>();
         services.AddScoped<IOutboxRepository, OutboxRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();

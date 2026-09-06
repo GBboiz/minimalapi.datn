@@ -25,15 +25,32 @@ public sealed class CancelOrderHandler(
         if (order.Status == OrderStatus.Cancelled)
             return Result<Guid>.Success(order.Id.Value);
 
-        // Nếu đơn hàng đã từng được xác nhận thì hoàn trả tồn kho
-        if (order.Status == OrderStatus.Confirmed)
+        var groupedItems = order.Items
+            .GroupBy(i => i.ProductId)
+            .Select(g => new { ProductId = g.Key, TotalQuantity = g.Sum(x => x.Quantity) })
+            .ToList();
+
+        // Nếu đơn đang Pending: giải phóng số lượng giữ chỗ (tồn kho dự báo tăng lại)
+        if (order.Status == OrderStatus.Pending)
         {
-            foreach (var item in order.Items)
+            foreach (var item in groupedItems)
             {
                 var product = await productRepo.GetByIdAsync(item.ProductId, storeId, ct);
                 if (product is not null)
                 {
-                    product.AdjustStock(item.Quantity);
+                    product.ReleaseReservedStock(item.TotalQuantity);
+                }
+            }
+        }
+        // Nếu đơn hàng đã từng được xác nhận: hoàn trả tồn kho thực tế
+        else if (order.Status == OrderStatus.Confirmed)
+        {
+            foreach (var item in groupedItems)
+            {
+                var product = await productRepo.GetByIdAsync(item.ProductId, storeId, ct);
+                if (product is not null)
+                {
+                    product.AdjustStock(item.TotalQuantity);
                 }
             }
         }

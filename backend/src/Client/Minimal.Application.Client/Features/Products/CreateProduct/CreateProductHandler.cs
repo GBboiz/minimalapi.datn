@@ -26,7 +26,28 @@ public sealed class CreateProductHandler(
         var productName = ProductName.Create(request.Name);
         var productPrice = Money.Create(request.Price, request.Currency);
 
-        var product = Product.Create(storeId, request.Sku, request.StockQuantity, productName, productPrice, new CategoryId(request.CategoryId), request.Description);
+        ProductId? giftProductId = null;
+        string? giftProductName = null;
+        if (request.GiftProductId.HasValue && request.GiftProductId.Value != Guid.Empty)
+        {
+            var giftProduct = await productRepo.GetByIdAsync(new ProductId(request.GiftProductId.Value), storeId, ct);
+            if (giftProduct is not null)
+            {
+                giftProductId = giftProduct.Id;
+                giftProductName = giftProduct.Name.Value;
+            }
+        }
+
+        var product = Product.Create(
+            storeId,
+            request.Sku,
+            request.StockQuantity,
+            productName,
+            productPrice,
+            new CategoryId(request.CategoryId),
+            request.Description,
+            giftProductId,
+            giftProductName);
 
         productRepo.Add(product);
         await unitOfWork.SaveChangesAsync(ct);

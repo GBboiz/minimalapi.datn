@@ -29,6 +29,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options, IMediat
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
     public DbSet<GoogleSheetConnection> GoogleSheetConnections => Set<GoogleSheetConnection>();
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
+    public DbSet<Promotion> Promotions => Set<Promotion>();
 
     // IApplicationDbContext — expose IQueryable cho query handlers
     IQueryable<Product> IApplicationDbContext.Products => Products.AsNoTracking();
@@ -37,6 +38,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options, IMediat
     IQueryable<Order> IApplicationDbContext.Orders => Orders.Include(o => o.Items).AsNoTracking();
     IQueryable<GoogleSheetConnection> IApplicationDbContext.GoogleSheetConnections => GoogleSheetConnections.AsNoTracking();
     IQueryable<OutboxMessage> IApplicationDbContext.OutboxMessages => OutboxMessages.AsNoTracking();
+    IQueryable<Promotion> IApplicationDbContext.Promotions => Promotions.AsNoTracking();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

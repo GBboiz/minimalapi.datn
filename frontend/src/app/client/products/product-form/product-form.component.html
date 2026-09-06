@@ -89,6 +89,25 @@
             formControlName="description"></textarea>
         </div>
 
+        <!-- Quà tặng kèm (Khi mua sản phẩm được tặng sẵn quà) -->
+        <div class="mb-3">
+          <label for="giftProductId" class="form-label">
+            <i class="bi bi-gift-fill text-warning me-1"></i> Quà tặng kèm (Tự động tặng khi mua sản phẩm này)
+          </label>
+          <select
+            id="giftProductId"
+            class="form-select"
+            formControlName="giftProductId">
+            <option [ngValue]="null">-- Không có quà tặng kèm --</option>
+            <option *ngFor="let prod of availableGiftProducts" [value]="prod.id">
+              🎁 {{ prod.name }} (SKU: {{ prod.sku }} - {{ prod.price | number:'1.0-0' }} {{ prod.currency }})
+            </option>
+          </select>
+          <div class="form-text text-muted">
+            Khi thêm sản phẩm này vào đơn hàng, quà tặng sẽ tự động xuất hiện với giá 0đ và trừ kho khi duyệt đơn.
+          </div>
+        </div>
+
         <!-- IsActive (only in edit mode) -->
         <div class="mb-3" *ngIf="isEditMode">
           <div class="form-check">

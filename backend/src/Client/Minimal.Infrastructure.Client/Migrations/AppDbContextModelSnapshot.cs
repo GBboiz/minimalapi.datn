@@ -77,6 +77,15 @@ namespace MinimalAPI.Infrastructure.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("is_active");
 
+                    b.Property<Guid?>("GiftProductId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("gift_product_id");
+
+                    b.Property<string>("GiftProductName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("gift_product_name");
+
                     b.Property<string>("Sku")
                         .IsRequired()
                         .HasMaxLength(64)
@@ -88,6 +97,12 @@ namespace MinimalAPI.Infrastructure.Migrations
                         .HasColumnType("integer")
                         .HasDefaultValue(0)
                         .HasColumnName("stock_quantity");
+
+                    b.Property<int>("ReservedQuantity")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("reserved_quantity");
 
                     b.Property<Guid>("StoreId")
                         .HasColumnType("uuid")
@@ -320,6 +335,42 @@ namespace MinimalAPI.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
 
+                    b.Property<decimal>("DiscountPercent")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(5,2)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("discount_percent");
+
+                    b.ComplexProperty(typeof(Dictionary<string, object>), "SubTotal", "MinimalAPI.Domain.Entities.Order.SubTotal#Money", b1 =>
+                        {
+                            b1.IsRequired();
+
+                            b1.Property<decimal>("Amount")
+                                .HasColumnType("decimal(18,2)")
+                                .HasColumnName("sub_total_amount");
+
+                            b1.Property<string>("Currency")
+                                .IsRequired()
+                                .HasMaxLength(3)
+                                .HasColumnType("character varying(3)")
+                                .HasColumnName("sub_total_currency");
+                        });
+
+                    b.ComplexProperty(typeof(Dictionary<string, object>), "DiscountAmount", "MinimalAPI.Domain.Entities.Order.DiscountAmount#Money", b1 =>
+                        {
+                            b1.IsRequired();
+
+                            b1.Property<decimal>("Amount")
+                                .HasColumnType("decimal(18,2)")
+                                .HasColumnName("discount_amount");
+
+                            b1.Property<string>("Currency")
+                                .IsRequired()
+                                .HasMaxLength(3)
+                                .HasColumnType("character varying(3)")
+                                .HasColumnName("discount_currency");
+                        });
+
                     b.ComplexProperty(typeof(Dictionary<string, object>), "TotalAmount", "MinimalAPI.Domain.Entities.Order.TotalAmount#Money", b1 =>
                         {
                             b1.IsRequired();
@@ -352,6 +403,12 @@ namespace MinimalAPI.Infrastructure.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
                         .HasColumnName("id");
+
+                    b.Property<bool>("IsGift")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_gift");
 
                     b.Property<Guid>("OrderId")
                         .HasColumnType("uuid")
@@ -426,6 +483,65 @@ namespace MinimalAPI.Infrastructure.Migrations
                     b.HasIndex("StoreId");
                     b.HasIndex("ProcessedAt", "RetryCount");
                     b.ToTable("outbox_messages", (string)null);
+                });
+
+            modelBuilder.Entity("MinimalAPI.Domain.Entities.Promotion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("StoreId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("store_id");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("code");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("name");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer")
+                        .HasColumnName("discount_type");
+
+                    b.Property<decimal>("Value")
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("value");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("description");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StoreId");
+
+                    b.HasIndex("StoreId", "Code")
+                        .IsUnique();
+
+                    b.ToTable("promotions", (string)null);
                 });
 
             modelBuilder.Entity("MinimalAPI.Domain.Entities.OrderItem", b =>

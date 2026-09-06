@@ -98,15 +98,34 @@
                 </tr>
               </thead>
               <tbody>
-                <tr *ngFor="let item of order.items; let i = index">
+                <tr *ngFor="let item of order.items; let i = index" [class.table-light]="item.isGift">
                   <td>{{ i + 1 }}</td>
-                  <td><strong>{{ item.productName }}</strong></td>
+                  <td>
+                    <span *ngIf="item.isGift" class="badge bg-warning text-dark me-1">
+                      <i class="bi bi-gift-fill"></i> Quà tặng
+                    </span>
+                    <strong>{{ item.productName }}</strong>
+                  </td>
                   <td class="text-center">{{ item.quantity }}</td>
-                  <td class="text-end">{{ item.unitPrice | number:'1.0-0' }} {{ item.currency }}</td>
-                  <td class="text-end fw-bold">{{ item.totalPrice | number:'1.0-0' }} {{ item.currency }}</td>
+                  <td class="text-end">
+                    <span *ngIf="item.isGift" class="text-muted text-decoration-line-through small">0 {{ item.currency }}</span>
+                    <span *ngIf="!item.isGift">{{ item.unitPrice | number:'1.0-0' }} {{ item.currency }}</span>
+                  </td>
+                  <td class="text-end fw-bold">
+                    <span *ngIf="item.isGift" class="badge bg-success">0 {{ item.currency }}</span>
+                    <span *ngIf="!item.isGift">{{ item.totalPrice | number:'1.0-0' }} {{ item.currency }}</span>
+                  </td>
                 </tr>
               </tbody>
               <tfoot>
+                <tr *ngIf="order.discountPercent && order.discountPercent > 0">
+                  <td colspan="4" class="text-end text-muted">Tạm tính:</td>
+                  <td class="text-end text-muted">{{ (order.subTotal || order.totalAmount) | number:'1.0-0' }} {{ order.currency }}</td>
+                </tr>
+                <tr *ngIf="order.discountPercent && order.discountPercent > 0" class="text-danger">
+                  <td colspan="4" class="text-end">Chiết khấu (-{{ order.discountPercent }}%):</td>
+                  <td class="text-end">-{{ order.discountAmount | number:'1.0-0' }} {{ order.currency }}</td>
+                </tr>
                 <tr class="table-active">
                   <td colspan="4" class="text-end fs-5"><strong>Tổng tiền thanh toán:</strong></td>
                   <td class="text-end fs-5 text-danger fw-bold">
