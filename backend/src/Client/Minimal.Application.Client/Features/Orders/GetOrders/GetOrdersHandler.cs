@@ -34,6 +34,15 @@ public sealed class GetOrdersHandler(IApplicationDbContext db, ICurrentStore cur
                 x.Customer.Phone.Contains(searchLower));
         }
 
+        if (!string.IsNullOrWhiteSpace(request.Date) && DateOnly.TryParse(request.Date, out var filterDate))
+        {
+            var startLocal = filterDate.ToDateTime(TimeOnly.MinValue);
+            var endLocal = filterDate.ToDateTime(TimeOnly.MaxValue);
+            var startUtc = DateTime.SpecifyKind(startLocal.AddHours(-7), DateTimeKind.Utc);
+            var endUtc = DateTime.SpecifyKind(endLocal.AddHours(-7), DateTimeKind.Utc);
+            query = query.Where(x => x.Order.CreatedAt >= startUtc && x.Order.CreatedAt <= endUtc);
+        }
+
         var totalCount = await query.CountAsync(ct);
 
         var items = await query
@@ -52,7 +61,7 @@ public sealed class GetOrdersHandler(IApplicationDbContext db, ICurrentStore cur
                 x.Order.DiscountAmount.Amount,
                 x.Order.TotalAmount.Amount,
                 x.Order.TotalAmount.Currency,
-                x.Order.Items.Sum(i => i.Quantity),
+                x.Order.Items.Where(i => !i.IsGift).Sum(i => (int?)i.Quantity) ?? 0,
                 x.Order.CreatedAt))
             .ToListAsync(ct);
 

@@ -8,4 +8,5 @@ public record GetOrdersQuery(
     int Page = 1,
     int PageSize = 10,
     string? Search = null,
-    string? Status = null) : IRequest<PagedResult<OrderSummaryDto>>;
+    string? Status = null,
+    string? Date = null) : IRequest<PagedResult<OrderSummaryDto>>;

@@ -1,128 +1,275 @@
-<div class="container mt-4">
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <h2>Danh sách đơn hàng</h2>
-    <a routerLink="/orders/create" class="btn btn-primary">
-      <i class="bi bi-cart-plus"></i> Tạo đơn hàng mới
-    </a>
+<div class="orders-page-container">
+  <!-- Header: Tiêu đề & Nút Tạo Đơn -->
+  <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mb-4">
+    <div>
+      <h2 class="page-title mb-1">Danh sách đơn hàng</h2>
+      <p class="page-subtitle text-muted mb-0">Theo dõi, duyệt và quản lý toàn bộ đơn hàng của cửa hàng</p>
+    </div>
+    <div>
+      <a routerLink="/orders/create" class="btn btn-primary d-inline-flex align-items-center gap-2 px-3 py-2">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="9" cy="21" r="1"></circle>
+          <circle cx="20" cy="21" r="1"></circle>
+          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+          <line x1="12" y1="9" x2="12" y2="15"></line>
+          <line x1="9" y1="12" x2="15" y2="12"></line>
+        </svg>
+        <span>Tạo đơn hàng mới</span>
+      </a>
+    </div>
   </div>
 
-  <!-- Filters -->
-  <div class="row mb-3 g-2">
-    <div class="col-md-5">
-      <div class="input-group">
-        <input
-          type="text"
-          class="form-control"
-          placeholder="Tìm theo mã đơn, tên hoặc SĐT khách..."
-          [(ngModel)]="searchTerm"
-          (keyup.enter)="onSearch()">
-        <button class="btn btn-outline-secondary" type="button" (click)="onSearch()">
-          Tìm kiếm
+  <!-- Bộ lọc (Filters) -->
+  <div class="filter-card mb-3 p-3 bg-white border rounded-3">
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3">
+      <!-- Filter 1 (Bên trái): Tìm kiếm tự động theo Mã đơn hàng, Khách hàng, SĐT -->
+      <div class="filter-search-col">
+        <div class="search-input-wrapper">
+          <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input
+            type="text"
+            class="form-control search-input"
+            placeholder="Tìm theo mã đơn, khách hàng, SĐT..."
+            [(ngModel)]="searchTerm"
+            (ngModelChange)="onSearchInput()"
+            (keyup.enter)="onSearch()">
+          <button *ngIf="searchTerm" type="button" class="btn btn-clear-search" (click)="searchTerm = ''; onSearchInput()" title="Xóa tìm kiếm">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Filter 2 (Ngoài cùng bên phải): Trạng thái, Ngày tạo, Nút làm mới -->
+      <div class="filter-actions-col d-flex align-items-center gap-2 flex-wrap justify-content-lg-end">
+        <!-- 1. Lọc trạng thái -->
+        <div class="filter-item-status">
+          <select class="form-select filter-select" [(ngModel)]="selectedStatus" (change)="onStatusChange()">
+            <option *ngFor="let s of statuses" [value]="s.value">{{ s.label }}</option>
+          </select>
+        </div>
+
+        <!-- 2. Lọc ngày tạo -->
+        <div class="filter-item-date">
+          <input
+            type="date"
+            class="form-control filter-date-input"
+            [(ngModel)]="selectedDate"
+            (change)="onDateChange()"
+            title="Lọc theo ngày tạo">
+        </div>
+
+        <!-- 3. Nút Refresh / Làm mới bộ lọc -->
+        <button
+          type="button"
+          class="btn btn-refresh d-inline-flex align-items-center gap-1.5"
+          (click)="resetFilters()"
+          title="Làm mới bộ lọc về mặc định">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" [class.spin-icon]="loading">
+            <path d="M23 4v6h-6"></path>
+            <path d="M1 20v-6h6"></path>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+          </svg>
+          <span> Làm mới</span>
         </button>
       </div>
     </div>
-    <div class="col-md-4">
-      <select class="form-select" [(ngModel)]="selectedStatus" (change)="onStatusChange()">
-        <option *ngFor="let s of statuses" [value]="s.value">{{ s.label }}</option>
-      </select>
-    </div>
   </div>
 
-  <!-- Loading -->
-  <div *ngIf="loading" class="text-center my-4">
-    <div class="spinner-border" role="status">
+  <!-- Trạng thái tải dữ liệu -->
+  <div *ngIf="loading" class="text-center my-5 py-4">
+    <div class="spinner-border text-primary" role="status">
       <span class="visually-hidden">Đang tải...</span>
     </div>
+    <div class="text-muted small mt-2">Đang tải danh sách đơn hàng...</div>
   </div>
 
-  <!-- Table -->
-  <div *ngIf="!loading && orders.length > 0" class="table-responsive">
-    <table class="table table-striped table-hover align-middle">
-      <thead>
-        <tr>
-          <th>Mã đơn</th>
-          <th>Khách hàng</th>
-          <th>Số ĐT</th>
-          <th>Số món</th>
-          <th>Tổng tiền</th>
-          <th>Trạng thái</th>
-          <th>Ngày tạo</th>
-          <th>Thao tác</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let order of orders">
-          <td>
-            <a [routerLink]="['/orders', order.id]" class="fw-bold text-decoration-none">
-              {{ order.code }}
-            </a>
-          </td>
-          <td>{{ order.customerName }}</td>
-          <td><code>{{ order.customerPhone }}</code></td>
-          <td>
-            <strong>{{ order.totalAmount | number:'1.0-0' }} {{ order.currency }}</strong>
-            <span *ngIf="order.discountPercent && order.discountPercent > 0" class="badge bg-danger ms-1">
-              -{{ order.discountPercent }}%
-            </span>
-            <div *ngIf="order.discountPercent && order.discountPercent > 0" class="text-muted small text-decoration-line-through">
-              {{ (order.subTotal || order.totalAmount) | number:'1.0-0' }} {{ order.currency }}
-            </div>
-          </td>
-          <td>
-            <span class="badge" [ngClass]="getStatusBadgeClass(order.status)">
-              {{ getStatusLabel(order.status) }}
-            </span>
-          </td>
-          <td>{{ order.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
-          <td>
-            <div class="btn-group btn-group-sm">
-              <a [routerLink]="['/orders', order.id]" class="btn btn-outline-secondary" title="Xem chi tiết">
-                Chi tiết
+  <!-- Bảng danh sách đơn hàng -->
+  <div *ngIf="!loading && orders.length > 0" class="card table-card border rounded-3">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead>
+          <tr>
+            <th scope="col" style="min-width: 170px;">Mã đơn</th>
+            <th scope="col" style="min-width: 140px;">Khách hàng</th>
+            <th scope="col" style="min-width: 120px;">Số ĐT</th>
+            <th scope="col" class="text-center" style="min-width: 90px;">Số lượng</th>
+            <th scope="col" class="text-end" style="min-width: 140px;">Tổng tiền</th>
+            <th scope="col" class="text-center" style="min-width: 130px;">Trạng thái</th>
+            <th scope="col" style="min-width: 120px;">Ngày tạo</th>
+            <th scope="col" class="text-end" style="width: 80px;">Thao tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let order of orders; let i = index">
+            <!-- Mã đơn -->
+            <td>
+              <a [routerLink]="['/orders', order.id]" class="order-code-link" title="Xem chi tiết đơn">
+                {{ order.code }}
               </a>
-              <button
-                *ngIf="order.status === 'Pending'"
-                class="btn btn-success"
-                (click)="onConfirm(order.id, order.code)"
-                title="Xác nhận & Trừ tồn kho">
-                Duyệt
-              </button>
-              <button
-                *ngIf="order.status === 'Confirmed'"
-                class="btn btn-primary"
-                (click)="onComplete(order.id, order.code)"
-                title="Hoàn tất đơn">
-                Xong
-              </button>
-              <button
-                *ngIf="order.status === 'Pending' || order.status === 'Confirmed'"
-                class="btn btn-outline-danger"
-                (click)="onCancel(order.id, order.code)"
-                title="Hủy đơn">
-                Hủy
-              </button>
-            </div>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+            </td>
+
+            <!-- Khách hàng -->
+            <td>
+              <div class="fw-medium text-dark">{{ order.customerName }}</div>
+            </td>
+
+            <!-- Số ĐT: màu đen chuẩn -->
+            <td>
+              <span class="phone-text">{{ order.customerPhone || '—' }}</span>
+            </td>
+
+            <!-- Số lượng: chỉ hiện sản phẩm chính -->
+            <td class="text-center">
+              <span class="fw-semibold text-dark">{{ order.totalItems }}</span>
+            </td>
+
+            <!-- Tổng tiền: chỉ hiện giá cuối cùng (định dạng dấu chấm) -->
+            <td class="text-end text-nowrap">
+              <span class="fw-semibold text-dark fs-6">{{ formatPrice(order.totalAmount) }} {{ order.currency }}</span>
+            </td>
+
+            <!-- Trạng thái: badge màu sắc rõ ràng (Đã xác nhận: xanh, Chờ duyệt: vàng, Đã huỷ: đỏ) -->
+            <td class="text-center">
+              <span class="status-badge" [ngClass]="getStatusBadgeClass(order.status)">
+                <span class="status-dot"></span>
+                {{ getStatusLabel(order.status) }}
+              </span>
+            </td>
+
+            <!-- Ngày tạo: ngày trên giờ dưới -->
+            <td>
+              <div class="order-date">{{ order.createdAt | date:'dd/MM/yyyy' }}</div>
+              <div class="order-time">{{ order.createdAt | date:'HH:mm' }}</div>
+            </td>
+
+            <!-- Thao tác: Chỉ icon (...) hiển thị dropdown Chi tiết, Duyệt, Huỷ, Đóng -->
+            <td class="text-end">
+              <div class="action-dropdown" [class.dropup]="i >= orders.length - 2 && orders.length > 2" (click)="$event.stopPropagation()">
+                <button
+                  type="button"
+                  class="btn-action-trigger"
+                  [class.active]="activeDropdownOrderId === order.id"
+                  (click)="toggleDropdown(order.id, $event)"
+                  title="Thao tác"
+                  aria-label="Thao tác">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                    <circle cx="12" cy="5" r="2"></circle>
+                    <circle cx="12" cy="12" r="2"></circle>
+                    <circle cx="12" cy="19" r="2"></circle>
+                  </svg>
+                </button>
+
+                <!-- Dropdown Menu -->
+                <div class="action-menu shadow-lg border rounded-3 bg-white" *ngIf="activeDropdownOrderId === order.id">
+                  <!-- 1. Chi tiết -->
+                  <a class="action-item" [routerLink]="['/orders', order.id]" (click)="closeDropdown()">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                      <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                    <span>Chi tiết</span>
+                  </a>
+
+                  <!-- 2. Duyệt (khi Chờ duyệt) -->
+                  <button
+                    *ngIf="order.status === 'Pending'"
+                    type="button"
+                    class="action-item action-confirm"
+                    (click)="onConfirm(order.id, order.code)">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    <span>Duyệt</span>
+                  </button>
+
+                  <!-- 3. Đóng (khi Đã xác nhận) -->
+                  <button
+                    *ngIf="order.status === 'Confirmed'"
+                    type="button"
+                    class="action-item action-complete"
+                    (click)="onComplete(order.id, order.code)">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                      <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                    <span>Đóng</span>
+                  </button>
+
+                  <!-- 4. Hủy (khi Chờ duyệt hoặc Đã xác nhận) -->
+                  <button
+                    *ngIf="order.status === 'Pending' || order.status === 'Confirmed'"
+                    type="button"
+                    class="action-item action-cancel"
+                    (click)="onCancel(order.id, order.code)">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <line x1="15" y1="9" x2="9" y2="15"></line>
+                      <line x1="9" y1="9" x2="15" y2="15"></line>
+                    </svg>
+                    <span>Hủy</span>
+                  </button>
+
+                  <div class="action-divider"></div>
+
+                  <!-- Đóng popup menu -->
+                  <button
+                    type="button"
+                    class="action-item action-close-menu text-muted"
+                    (click)="closeDropdown()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <line x1="18" y1="6" x2="6" y2="18"></line>
+                      <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                    <span>Đóng menu</span>
+                  </button>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 
-  <!-- No data -->
-  <div *ngIf="!loading && orders.length === 0" class="alert alert-info">
-    Chưa có đơn hàng nào
+  <!-- Khi không có dữ liệu -->
+  <div *ngIf="!loading && orders.length === 0" class="empty-state text-center bg-white border rounded-3 p-5">
+    <div class="empty-icon-wrapper mb-3">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+        <polyline points="14 2 14 8 20 8"></polyline>
+        <line x1="16" y1="13" x2="8" y2="13"></line>
+        <line x1="16" y1="17" x2="8" y2="17"></line>
+        <polyline points="10 9 9 9 8 9"></polyline>
+      </svg>
+    </div>
+    <h5 class="fw-bold text-dark mb-1">Chưa có đơn hàng nào</h5>
+    <p class="text-muted small mb-3">Không tìm thấy đơn hàng nào phù hợp với bộ lọc hiện tại.</p>
+    <a routerLink="/orders/create" class="btn btn-outline-primary btn-sm">Tạo đơn hàng mới</a>
   </div>
 
-  <!-- Pagination -->
-  <nav *ngIf="pagedResult && pagedResult.totalPages > 1" aria-label="Page navigation">
-    <ul class="pagination justify-content-center">
+  <!-- Phân trang -->
+  <nav *ngIf="pagedResult && pagedResult.totalPages > 1" class="pagination-wrapper mt-4" aria-label="Page navigation">
+    <ul class="pagination pagination-sm justify-content-center align-items-center gap-1 mb-0">
       <li class="page-item" [class.disabled]="!pagedResult.hasPrevious">
-        <button class="page-link" (click)="onPageChange(currentPage - 1)" [disabled]="!pagedResult.hasPrevious">Trước</button>
+        <button class="page-link rounded-2" (click)="onPageChange(currentPage - 1)" [disabled]="!pagedResult.hasPrevious">
+          &laquo; Trước
+        </button>
       </li>
-      <li class="page-item active">
-        <span class="page-link">Trang {{ pagedResult.page }} / {{ pagedResult.totalPages }}</span>
+      <li class="page-item disabled">
+        <span class="page-link border-0 text-muted px-3">
+          Trang {{ pagedResult.page }} / {{ pagedResult.totalPages }}
+        </span>
       </li>
       <li class="page-item" [class.disabled]="!pagedResult.hasNext">
-        <button class="page-link" (click)="onPageChange(currentPage + 1)" [disabled]="!pagedResult.hasNext">Sau</button>
+        <button class="page-link rounded-2" (click)="onPageChange(currentPage + 1)" [disabled]="!pagedResult.hasNext">
+          Sau &raquo;
+        </button>
       </li>
     </ul>
   </nav>

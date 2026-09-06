@@ -24,9 +24,10 @@ public static class OrderEndpoints
             int page = 1,
             int pageSize = 10,
             string? search = null,
-            string? status = null) =>
+            string? status = null,
+            string? date = null) =>
         {
-            var result = await sender.Send(new GetOrdersQuery(page, pageSize, search, status));
+            var result = await sender.Send(new GetOrdersQuery(page, pageSize, search, status, date));
             return TypedResults.Ok(result);
         })
         .WithName("GetOrders")
