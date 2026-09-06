@@ -46,6 +46,7 @@ export interface CreateOrderItemRequest {
   productId: string;
   quantity: number;
   isGift?: boolean;
+  unitPrice?: number;
 }
 
 export interface CreateOrderRequest {

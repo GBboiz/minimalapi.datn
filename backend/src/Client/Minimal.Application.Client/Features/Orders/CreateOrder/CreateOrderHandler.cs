@@ -4,6 +4,7 @@ using MinimalAPI.Application.Abstractions;
 using MinimalAPI.Application.Features.GoogleSheets.DTOs;
 using MinimalAPI.Domain.Entities;
 using MinimalAPI.Domain.Interfaces;
+using MinimalAPI.Domain.ValueObjects;
 
 namespace MinimalAPI.Application.Features.Orders.CreateOrder;
 
@@ -35,11 +36,15 @@ public sealed class CreateOrderHandler(
             if (!product.IsActive)
                 return Result<Guid>.Failure($"Sản phẩm '{product.Name.Value}' đã ngưng hoạt động.");
 
+            var itemPrice = itemReq.UnitPrice.HasValue && itemReq.UnitPrice.Value >= 0 && !itemReq.IsGift
+                ? Money.Create(itemReq.UnitPrice.Value, product.Price.Currency)
+                : product.Price;
+
             orderItems.Add(OrderItem.Create(
                 orderId,
                 product.Id,
                 product.Name.Value,
-                product.Price,
+                itemPrice,
                 itemReq.Quantity,
                 isGift: itemReq.IsGift));
 

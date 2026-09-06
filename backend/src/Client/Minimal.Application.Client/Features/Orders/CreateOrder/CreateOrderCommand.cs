@@ -3,7 +3,7 @@ using MinimalAPI.Application.Abstractions;
 
 namespace MinimalAPI.Application.Features.Orders.CreateOrder;
 
-public record CreateOrderItemRequest(Guid ProductId, int Quantity, bool IsGift = false);
+public record CreateOrderItemRequest(Guid ProductId, int Quantity, bool IsGift = false, decimal? UnitPrice = null);
 
 public record CreateOrderCommand(
     Guid CustomerId,
