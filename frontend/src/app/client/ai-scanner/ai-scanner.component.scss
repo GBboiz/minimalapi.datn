@@ -1,0 +1,178 @@
+.ai-scanner-container {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Camera Viewport & Laser Scanner */
+.camera-viewport {
+  height: 380px;
+  background-color: #0b0f19;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.scan-laser-line {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(59, 130, 246, 0) 0%, #3b82f6 50%, rgba(59, 130, 246, 0) 100%);
+  box-shadow: 0 0 12px 2px #3b82f6;
+  animation: scanMove 2.5s cubic-bezier(0.4, 0, 0.2, 1) infinite alternate;
+  z-index: 10;
+}
+
+@keyframes scanMove {
+  0% {
+    top: 5%;
+    opacity: 0.8;
+  }
+  100% {
+    top: 95%;
+    opacity: 0.95;
+  }
+}
+
+/* Reticle overlay corners */
+.scanner-frame-overlay {
+  position: absolute;
+  top: 15%;
+  bottom: 15%;
+  left: 10%;
+  right: 10%;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.frame-corner {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-color: #60a5fa;
+  border-style: solid;
+
+  &.top-left {
+    top: 0;
+    left: 0;
+    border-width: 3px 0 0 3px;
+    border-top-left-radius: 6px;
+  }
+
+  &.top-right {
+    top: 0;
+    right: 0;
+    border-width: 3px 3px 0 0;
+    border-top-right-radius: 6px;
+  }
+
+  &.bottom-left {
+    bottom: 0;
+    left: 0;
+    border-width: 0 0 3px 3px;
+    border-bottom-left-radius: 6px;
+  }
+
+  &.bottom-right {
+    bottom: 0;
+    right: 0;
+    border-width: 0 3px 3px 0;
+    border-bottom-right-radius: 6px;
+  }
+}
+
+.scan-instruction-hint {
+  position: absolute;
+  bottom: -28px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.7);
+  letter-spacing: 0.02em;
+}
+
+.camera-icon-circle {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+}
+
+/* Drop Zone for File Upload */
+.drop-zone {
+  min-height: 280px;
+  border: 2px dashed #cbd5e1;
+  background-color: #f8fafc;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: #3b82f6;
+    background-color: #eff6ff;
+  }
+}
+
+.upload-icon-circle {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: #e0f2fe;
+  color: #0284c7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.max-h-250 {
+  max-height: 250px;
+}
+
+/* Success Card */
+.success-icon-box {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: #dcfce7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* AI Pulse Spinner & Empty states */
+.empty-icon-circle {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+}
+
+.workflow-step-badge {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #e2e8f0;
+  color: #475569;
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ai-pulse-spinner {
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

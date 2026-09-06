@@ -10,10 +10,12 @@ import { OrderListComponent } from './orders/order-list/order-list.component';
 import { OrderCreateComponent } from './orders/order-create/order-create.component';
 import { OrderDetailComponent } from './orders/order-detail/order-detail.component';
 import { GoogleSheetsDashboardComponent } from './google-sheets/google-sheets-dashboard/google-sheets-dashboard.component';
+import { AiScannerComponent } from './ai-scanner/ai-scanner.component';
 
 export const CLIENT_ROUTES: Routes = [
   { path: '', component: HomeComponent },
   { path: 'dashboard', component: HomeComponent },
+  { path: 'ai-scanner', component: AiScannerComponent },
   { path: 'products', component: ProductListComponent },
   { path: 'products/create', component: ProductFormComponent },
   { path: 'products/edit/:id', component: ProductFormComponent },

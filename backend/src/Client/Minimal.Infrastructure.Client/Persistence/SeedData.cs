@@ -74,53 +74,76 @@ public static class SeedData
             context.Categories.AddRange(electronics, clothing, books);
             await context.SaveChangesAsync();
 
-        // Tạo Products
-        var products = new[]
-        {
-            Product.Create(
-                seedStore.Id,
-                "LAP-DELL-XPS13", 10,
-                ProductName.Create("Laptop Dell XPS 13"),
-                Money.VND(25000000),
-                electronics.Id,
-                "Laptop cao cấp, màn hình 13 inch"
-            ),
-            Product.Create(
-                seedStore.Id,
-                "PHONE-IP15PRO", 15,
-                ProductName.Create("iPhone 15 Pro"),
-                Money.VND(30000000),
-                electronics.Id,
-                "Điện thoại thông minh Apple mới nhất"
-            ),
-            Product.Create(
-                seedStore.Id,
-                "SHIRT-MEN-001", 50,
-                ProductName.Create("Áo thun nam"),
-                Money.VND(150000),
-                clothing.Id,
-                "Áo thun cotton 100%"
-            ),
-            Product.Create(
-                seedStore.Id,
-                "SHOE-NIKE-001", 20,
-                ProductName.Create("Giày thể thao Nike"),
-                Money.VND(2500000),
-                clothing.Id,
-                "Giày chạy bộ chuyên nghiệp"
-            ),
-            Product.Create(
-                seedStore.Id,
-                "BOOK-CLEANCODE", 25,
-                ProductName.Create("Clean Code"),
-                Money.VND(350000),
-                books.Id,
-                "Sách lập trình - Robert C. Martin"
-            )
-        };
+            // Tạo Products
+            var products = new[]
+            {
+                Product.Create(
+                    seedStore.Id,
+                    "LAP-DELL-XPS13", 10,
+                    ProductName.Create("Laptop Dell XPS 13"),
+                    Money.VND(25000000),
+                    electronics.Id,
+                    "Laptop cao cấp, màn hình 13 inch"
+                ),
+                Product.Create(
+                    seedStore.Id,
+                    "PHONE-IP15PRO", 15,
+                    ProductName.Create("iPhone 15 Pro"),
+                    Money.VND(30000000),
+                    electronics.Id,
+                    "Điện thoại thông minh Apple mới nhất"
+                ),
+                Product.Create(
+                    seedStore.Id,
+                    "SHIRT-MEN-001", 50,
+                    ProductName.Create("Áo thun nam"),
+                    Money.VND(150000),
+                    clothing.Id,
+                    "Áo thun cotton 100%"
+                ),
+                Product.Create(
+                    seedStore.Id,
+                    "SHOE-NIKE-001", 20,
+                    ProductName.Create("Giày thể thao Nike"),
+                    Money.VND(2500000),
+                    clothing.Id,
+                    "Giày chạy bộ chuyên nghiệp"
+                ),
+                Product.Create(
+                    seedStore.Id,
+                    "BOOK-CLEANCODE", 25,
+                    ProductName.Create("Clean Code"),
+                    Money.VND(350000),
+                    books.Id,
+                    "Sách lập trình - Robert C. Martin"
+                )
+            };
 
-        context.Products.AddRange(products);
-        await context.SaveChangesAsync();
+            context.Products.AddRange(products);
+            await context.SaveChangesAsync();
+        }
+
+        // 2.1 Đảm bảo sản phẩm Shopee demo (Nệm Sora) luôn tồn tại cho cửa hàng demo
+        if (seedStore is not null && !await context.Products.AnyAsync(p => p.StoreId == seedStore.Id && p.Sku == "SORA10-6"))
+        {
+            var homeCat = await context.Categories.FirstOrDefaultAsync(c => c.StoreId == seedStore.Id && c.Name == "Đồ gia dụng");
+            if (homeCat is null)
+            {
+                homeCat = Category.Create(seedStore.Id, "Đồ gia dụng", "Nệm, chăn ga gối đệm");
+                context.Categories.Add(homeCat);
+                await context.SaveChangesAsync();
+            }
+
+            var soraProduct = Product.Create(
+                seedStore.Id,
+                "SORA10-6", 25,
+                ProductName.Create("Nệm Foam Việt Nhật Sora - Hỗ Trợ Nâng Đỡ, Êm Ái Mềm Mại"),
+                Money.VND(2270000),
+                homeCat.Id,
+                "Nệm Foam cao cấp Việt Nhật Sora chính hãng, hỗ trợ nâng đỡ cột sống"
+            );
+            context.Products.Add(soraProduct);
+            await context.SaveChangesAsync();
         }
 
         // 3. Tạo khách hàng mẫu nếu chưa có

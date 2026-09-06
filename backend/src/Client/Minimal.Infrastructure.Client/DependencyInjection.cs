@@ -40,6 +40,7 @@ public static class DependencyInjection
         // Services & Integrations
         services.AddSingleton<IEncryptionService, Services.EncryptionService>();
         services.AddHttpClient<IGoogleSheetsService, Services.GoogleSheetsService>();
+        services.AddHttpClient<MinimalAPI.Application.Features.AiScanner.Interfaces.IAiVisionService, Services.GeminiVisionService>();
         services.AddSingleton<Services.PasswordService>();
         services.AddSingleton<Services.TokenService>();
 
