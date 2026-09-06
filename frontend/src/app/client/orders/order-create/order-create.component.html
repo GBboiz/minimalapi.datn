@@ -1,300 +1,653 @@
-<div class="container-fluid py-3">
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-      <h2 class="m-0 fw-bold d-flex align-items-center gap-2">
-        <span>🛒</span> Bán hàng
-      </h2>
-      <p class="text-muted m-0 mt-1">Lên đơn bán lẻ trực tiếp, tự động tặng quà kèm và áp dụng khuyến mãi</p>
-    </div>
-    <a routerLink="/orders" class="btn btn-outline-secondary d-flex align-items-center gap-2">
-      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-        <line x1="19" y1="12" x2="5" y2="12"></line>
-        <polyline points="12 19 5 12 12 5"></polyline>
-      </svg>
-      Xem danh sách đơn hàng
-    </a>
-  </div>
-
+<div class="pos-wrapper py-3">
+  <!-- Loading state -->
   <div *ngIf="loading" class="text-center my-5">
     <div class="spinner-border text-primary" role="status">
-      <span class="visually-hidden">Đang tải...</span>
+      <span class="visually-hidden">Đang tải dữ liệu...</span>
     </div>
-    <p class="text-muted mt-2">Đang tải dữ liệu bán hàng...</p>
+    <p class="text-muted mt-2">Đang tải dữ liệu bán hàng POS...</p>
   </div>
 
-  <div *ngIf="!loading" class="row g-4">
-    <!-- Cột trái: Chọn khách hàng & Thêm sản phẩm -->
-    <div class="col-lg-7">
-      <!-- 1. Chọn hoặc Thêm Khách Hàng Nhanh -->
-      <div class="card mb-4 border shadow-sm">
-        <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
-          <strong class="text-dark d-flex align-items-center gap-2">
-            <span>👤</span> 1. Thông tin khách hàng
-          </strong>
-          <span class="badge bg-light text-muted border font-monospace">{{ customers.length }} khách</span>
-        </div>
-        <div class="card-body">
-          <label class="form-label fw-semibold">Khách hàng <span class="text-danger">*</span></label>
-          <div class="input-group">
-            <select class="form-select" [(ngModel)]="selectedCustomerId">
-              <option value="">-- Chọn khách hàng --</option>
-              <option *ngFor="let c of customers" [value]="c.id">
-                {{ c.name }} — 📞 {{ c.phone }} {{ c.address ? '(' + c.address + ')' : '' }}
-              </option>
-            </select>
-            <button
-              class="btn btn-primary d-flex align-items-center gap-1 px-3"
-              type="button"
-              (click)="openQuickCustomerModal()"
-              title="Thêm khách hàng mới trực tiếp">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="12" y1="5" x2="12" y2="19"></line>
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-              </svg>
-              <span>+ Thêm khách</span>
-            </button>
-          </div>
-          <div class="form-text text-muted mt-2">
-            💡 Bấm nút <strong>+ Thêm khách</strong> để nhập nhanh Họ tên, SĐT, Địa chỉ mà không cần rời trang!
+  <div *ngIf="!loading" class="row g-3">
+    <!-- CỘT TRÁI: TÌM KIẾM, GIỎ HÀNG & TƯ VẤN BÁN HÀNG (7/12 CỘT) -->
+    <div class="col-xl-8 col-lg-7 d-flex flex-column gap-3">
+
+      <!-- 1. HEADER: TÌM KIẾM SẢN PHẨM THEO TÊN HOẶC MÃ SKU -->
+      <div class="card border shadow-sm pos-search-card">
+        <div class="card-body p-3">
+          <div class="row g-2 align-items-center">
+            <!-- Dropdown nhãn Tìm kiếm -->
+            <div class="col-auto">
+              <div class="badge bg-light text-dark border p-2 d-flex align-items-center gap-1">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <span class="fw-semibold">Tìm kiếm</span>
+              </div>
+            </div>
+
+            <!-- Ô nhập tìm kiếm (Tên hàng hóa, mã SKU) -->
+            <div class="col position-relative">
+              <div class="input-group">
+                <span class="input-group-text bg-white border-end-0">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="3" y1="4" x2="3" y2="20"></line>
+                    <line x1="7" y1="4" x2="7" y2="20"></line>
+                    <line x1="11" y1="4" x2="11" y2="20"></line>
+                    <line x1="17" y1="4" x2="17" y2="20"></line>
+                    <line x1="21" y1="4" x2="21" y2="20"></line>
+                  </svg>
+                </span>
+                <input
+                  id="header-search-input"
+                  type="text"
+                  class="form-control border-start-0 ps-0"
+                  placeholder="(F3) Nhập tên hàng hóa hoặc mã SKU..."
+                  [(ngModel)]="headerSearchQuery"
+                  (input)="onHeaderSearchInput()"
+                  (keydown.enter)="onHeaderSearchEnter()"
+                  (blur)="closeHeaderSearchDropdown()"
+                  autocomplete="off"
+                />
+              </div>
+
+              <!-- Dropdown kết quả tìm kiếm tức thì (Typeahead autocomplete) -->
+              <div class="search-dropdown-menu shadow-lg border rounded-3 bg-white" *ngIf="isSearchDropdownOpen && filteredHeaderProducts.length > 0">
+                <div
+                  class="search-dropdown-item d-flex align-items-center justify-content-between p-2.5 border-bottom"
+                  *ngFor="let prod of filteredHeaderProducts"
+                  (mousedown)="selectHeaderProduct(prod)">
+                  <div class="d-flex align-items-center gap-2">
+                    <div class="product-mini-icon">
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                      </svg>
+                    </div>
+                    <div>
+                      <div class="fw-semibold text-dark">{{ prod.name }}</div>
+                      <div class="text-muted small">
+                        <span class="badge bg-light text-dark border me-1">{{ prod.sku }}</span>
+                        <span>Tồn kho: <strong>{{ prod.stockQuantity }}</strong></span>
+                        <span class="text-muted ms-1" *ngIf="prod.giftProductName">(Tặng: {{ prod.giftProductName }})</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="text-end">
+                    <div class="fw-bold text-dark">{{ formatPrice(prod.price) }}đ</div>
+                    <small class="text-primary">+ Nhấn để chọn</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Ô nhập số lượng nhanh -->
+            <div class="col-auto">
+              <div class="input-group" style="width: 130px;">
+                <span class="input-group-text bg-light text-muted small fw-semibold">SL</span>
+                <input
+                  type="number"
+                  class="form-control text-center fw-bold"
+                  min="1"
+                  [(ngModel)]="headerSearchQuantity"
+                />
+              </div>
+            </div>
+
+            <!-- Nút Quét ảnh đơn hàng bằng AI -->
+            <div class="col-auto">
+              <button
+                type="button"
+                class="btn btn-outline-primary d-flex align-items-center px-3 py-2 fw-semibold shadow-sm"
+                (click)="openAiScanModal()"
+                title="Quét hình ảnh hóa đơn hoặc đơn hàng để AI tự động nhập sẵn">
+                <span>Quét ảnh AI</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- 2. Thêm Sản phẩm vào đơn -->
-      <div class="card border shadow-sm">
-        <div class="card-header bg-white py-3 border-bottom">
-          <strong class="text-dark d-flex align-items-center gap-2">
-            <span>📦</span> 2. Chọn sản phẩm & Quà tặng tự động
-          </strong>
+      <!-- 2. DANH SÁCH HÓA ĐƠN / GIỎ HÀNG BÁN LẺ -->
+      <div class="card border shadow-sm pos-cart-card flex-grow-1">
+        <div class="card-header bg-white py-2.5 px-3 border-bottom d-flex justify-content-between align-items-center">
+          <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 fs-6">
+              Hóa đơn 1
+            </span>
+            <span class="text-muted small" *ngIf="cart.length > 0">({{ cart.length }} mặt hàng)</span>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <button
+              class="btn btn-sm btn-outline-primary py-1 px-2.5 d-flex align-items-center"
+              (click)="openAiScanModal()"
+              title="Quét thêm ảnh đơn hàng bằng AI">
+              <span>Quét AI</span>
+            </button>
+            <button
+              class="btn btn-outline-danger btn-sm py-1 px-2 d-flex align-items-center gap-1"
+              *ngIf="cart.length > 0"
+              (click)="clearCart()"
+              title="Xóa tất cả mặt hàng">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              </svg>
+              <span>Xóa giỏ</span>
+            </button>
+          </div>
         </div>
-        <div class="card-body">
-          <div class="row g-3 align-items-end">
-            <div class="col-md-7">
-              <label class="form-label fw-semibold">Sản phẩm</label>
-              <select class="form-select" [(ngModel)]="selectedProductId">
-                <option value="">-- Chọn sản phẩm --</option>
-                <option *ngFor="let p of products" [value]="p.id">
-                  {{ p.name }} ({{ p.price | number:'1.0-0' }} {{ p.currency }})
-                  <ng-container *ngIf="p.giftProductName"> — 🎁 Tặng: {{ p.giftProductName }}</ng-container>
-                </option>
-              </select>
+
+        <div class="card-body p-0">
+          <!-- Khi giỏ hàng trống: Hiển thị minh họa giống giao diện bán hàng chuyên nghiệp -->
+          <div class="empty-cart-view text-center py-5" *ngIf="cart.length === 0">
+            <div class="empty-icons-container d-flex justify-content-center gap-3 mb-3">
+              <div class="empty-icon-box bg-light border rounded-3 p-3 text-primary">
+                <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                  <line x1="3" y1="6" x2="21" y2="6"></line>
+                  <path d="M16 10a4 4 0 0 1-8 0"></path>
+                </svg>
+              </div>
+              <div class="empty-icon-box bg-light border rounded-3 p-3 text-indigo">
+                <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <polyline points="20 12 20 22 4 22 4 12"></polyline>
+                  <rect x="2" y="7" width="20" height="5"></rect>
+                  <line x1="12" y1="22" x2="12" y2="7"></line>
+                  <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path>
+                  <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path>
+                </svg>
+              </div>
+              <div class="empty-icon-box bg-light border rounded-3 p-3 text-success">
+                <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <circle cx="9" cy="21" r="1"></circle>
+                  <circle cx="20" cy="21" r="1"></circle>
+                  <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                </svg>
+              </div>
             </div>
-            <div class="col-md-3">
-              <label class="form-label fw-semibold">Số lượng</label>
-              <input type="number" class="form-control" min="1" [(ngModel)]="selectedQuantity">
-            </div>
-            <div class="col-md-2">
+            <p class="text-muted fw-medium m-0">Chưa có hàng hóa nào trong hóa đơn</p>
+            <p class="text-muted small mt-1">Ấn <strong>F3</strong> để tìm kiếm mã SKU/tên sản phẩm, hoặc click chọn trong mục <strong>Tư vấn bán hàng</strong> bên dưới</p>
+            <div class="mt-3">
               <button
                 type="button"
-                class="btn btn-success w-100 py-2 d-flex align-items-center justify-content-center gap-1"
-                (click)="addToCart()"
-                [disabled]="!selectedProductId || selectedQuantity <= 0">
-                <span>+ Thêm</span>
+                class="btn btn-primary d-inline-flex align-items-center shadow-sm px-3 py-2"
+                (click)="openAiScanModal()">
+                <span>Quét ảnh đơn hàng bằng AI để nhập sẵn</span>
               </button>
             </div>
           </div>
 
-          <!-- Thông báo quà tặng kèm khi đã chọn sản phẩm -->
-          <div class="mt-3 p-3 bg-warning-subtle border border-warning-subtle rounded d-flex align-items-center gap-2" *ngIf="selectedProduct?.giftProductName">
-            <span class="fs-4">🎁</span>
-            <div>
-              <span class="fw-bold text-warning-emphasis">Sản phẩm có quà tặng kèm!</span>
-              <div class="text-dark small">
-                Khi thêm vào đơn, hệ thống sẽ tự động tặng <strong>{{ selectedProduct?.giftProductName }} (0đ)</strong>.
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Cột phải: Giỏ hàng & Khuyến mãi & Thanh toán -->
-    <div class="col-lg-5">
-      <div class="card border shadow-sm">
-        <div class="card-header bg-primary text-white py-3 d-flex justify-content-between align-items-center">
-          <strong class="d-flex align-items-center gap-2">
-            <span>📋</span> Chi tiết đơn hàng
-          </strong>
-          <span class="badge bg-white text-primary" *ngIf="cart.length > 0">{{ cart.length }} dòng</span>
-        </div>
-
-        <div class="card-body p-0">
-          <div class="table-responsive">
-            <table class="table table-sm mb-0 align-middle">
-              <thead class="table-light">
+          <!-- Bảng các sản phẩm trong giỏ hàng -->
+          <div class="table-responsive" *ngIf="cart.length > 0">
+            <table class="table table-hover align-middle mb-0 pos-cart-table">
+              <thead class="table-light text-muted small">
                 <tr>
-                  <th class="ps-3">Sản phẩm</th>
-                  <th class="text-center" style="width: 50px">SL</th>
-                  <th class="text-end" style="width: 100px">Đơn giá</th>
-                  <th class="text-end pe-3" style="width: 110px">Thành tiền</th>
-                  <th style="width: 35px"></th>
+                  <th class="ps-3" style="width: 40px;">#</th>
+                  <th>Hàng hóa</th>
+                  <th class="text-center" style="width: 140px;">Số lượng</th>
+                  <th class="text-end" style="width: 150px;">Đơn giá</th>
+                  <th class="text-end pe-3" style="width: 135px;">Thành tiền</th>
+                  <th style="width: 40px;"></th>
                 </tr>
               </thead>
               <tbody>
-                <tr *ngFor="let item of cart; let i = index" [class.table-warning-subtle]="item.isGift">
-                  <td class="ps-3">
-                    <div *ngIf="item.isGift" class="d-flex align-items-center gap-1">
-                      <span class="badge bg-warning text-dark">🎁 Quà tặng</span>
-                      <small class="text-dark fw-medium">{{ item.product.name }}</small>
+                <tr *ngFor="let item of cart; let i = index" [class.gift-row]="item.isGift">
+                  <td class="ps-3 text-muted small">{{ i + 1 }}</td>
+                  <td>
+                    <div class="d-flex align-items-center gap-2">
+                      <span *ngIf="item.isGift" class="badge bg-light text-dark border">Quà tặng</span>
+                      <div>
+                        <div class="fw-semibold text-dark">{{ item.product.name }}</div>
+                        <div class="text-muted small" *ngIf="!item.isGift">SKU: {{ item.product.sku }}</div>
+                        <div class="text-success small" *ngIf="item.isGift">Miễn phí đính kèm (0đ)</div>
+                      </div>
                     </div>
-                    <div *ngIf="!item.isGift" class="fw-semibold text-dark">
-                      {{ item.product.name }}
-                    </div>
-                  </td>
-                  <td class="text-center font-monospace">{{ item.quantity }}</td>
-                  <td class="text-end text-muted">
-                    <span *ngIf="item.isGift" class="badge bg-light text-muted border">0đ</span>
-                    <span *ngIf="!item.isGift">{{ item.product.price | number:'1.0-0' }}</span>
-                  </td>
-                  <td class="text-end pe-3">
-                    <strong *ngIf="!item.isGift" class="text-dark">{{ (item.product.price * item.quantity) | number:'1.0-0' }}đ</strong>
-                    <span *ngIf="item.isGift" class="badge bg-success">0đ (Tặng)</span>
                   </td>
                   <td class="text-center">
-                    <button class="btn btn-sm btn-link text-danger p-0 fs-5" (click)="removeFromCart(i)" title="Xóa món này">
-                      &times;
-                    </button>
-                  </td>
-                </tr>
-                <tr *ngIf="cart.length === 0">
-                  <td colspan="5" class="text-center text-muted py-4">
-                    <div class="py-2">
-                      <span class="fs-2 text-muted">🛒</span>
-                      <p class="m-0 mt-1 small">Chưa có sản phẩm nào trong đơn hàng</p>
+                    <div class="d-inline-flex align-items-center border rounded qty-control" *ngIf="!item.isGift">
+                      <button class="btn btn-sm btn-link text-secondary p-1 text-decoration-none" type="button" (click)="decreaseQuantity(i)">−</button>
+                      <input
+                        type="number"
+                        class="form-control form-control-sm border-0 text-center fw-bold p-0"
+                        style="width: 44px;"
+                        min="1"
+                        [ngModel]="item.quantity"
+                        (ngModelChange)="updateQuantity(i, $event)"
+                      />
+                      <button class="btn btn-sm btn-link text-secondary p-1 text-decoration-none" type="button" (click)="increaseQuantity(i)">+</button>
                     </div>
+                    <span class="badge bg-light text-dark border px-2 py-1" *ngIf="item.isGift">
+                      SL: {{ item.quantity }}
+                    </span>
+                  </td>
+                  <td class="text-end">
+                    <!-- Cho phép người dùng tự chỉnh sửa đơn giá, tự động format 1.000, 1.000.000 -->
+                    <div class="d-inline-flex align-items-center border rounded bg-white price-edit-box px-1 py-0.5" *ngIf="!item.isGift" title="Click để chỉnh sửa đơn giá">
+                      <input
+                        type="text"
+                        class="form-control form-control-sm border-0 text-end fw-bold p-0"
+                        style="width: 105px;"
+                        [ngModel]="item.unitPriceDisplay"
+                        (ngModelChange)="onUnitPriceChange(i, $event)"
+                        (blur)="onUnitPriceBlur(i)"
+                      />
+                      <span class="text-muted small ps-1 pe-0.5">đ</span>
+                    </div>
+                    <span *ngIf="item.isGift" class="badge bg-light text-muted border">0đ</span>
+                  </td>
+                  <td class="text-end pe-3">
+                    <strong *ngIf="!item.isGift" class="text-dark">
+                      {{ formatPrice(item.unitPrice * item.quantity) }}đ
+                    </strong>
+                    <span *ngIf="item.isGift" class="badge bg-light text-dark border">0đ (Tặng)</span>
+                  </td>
+                  <td class="text-center">
+                    <button
+                      type="button"
+                      class="btn-cart-remove text-danger border-0 bg-transparent p-0 d-inline-flex align-items-center justify-content-center"
+                      (click)="removeFromCart(i)"
+                      title="Xóa món">
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                      </svg>
+                    </button>
                   </td>
                 </tr>
               </tbody>
             </table>
           </div>
         </div>
+      </div>
 
-        <div class="card-footer bg-light p-3">
-          <!-- Section Khuyến Mãi (Hover Chips / Preset Cards) -->
-          <div class="mb-3">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-              <label class="form-label small fw-bold text-dark m-0 d-flex align-items-center gap-1">
-                <span>🏷️</span> Khuyến mãi / Giảm giá:
+      <!-- 3. MỤC: TƯ VẤN BÁN HÀNG (LIST SẢN PHẨM CÓ SẴN KÈM HÌNH ẢNH) -->
+      <div class="card border shadow-sm pos-consult-card">
+        <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center gap-3">
+          <div class="d-flex align-items-center gap-2 text-nowrap">
+            <strong class="fs-6 text-dark tracking-wide">TƯ VẤN BÁN HÀNG</strong>
+            <span class="badge bg-light text-muted border ms-1">{{ filteredConsultProducts.length }} sản phẩm</span>
+          </div>
+
+          <div class="d-flex align-items-center gap-2 flex-nowrap">
+            <!-- Ô tìm kiếm trong mục tư vấn -->
+            <div class="input-group input-group-sm" style="width: 200px;">
+              <span class="input-group-text bg-white">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+              </span>
+              <input
+                type="text"
+                class="form-control"
+                placeholder="Tìm kiếm..."
+                [(ngModel)]="consultSearchQuery"
+              />
+            </div>
+
+            <!-- Dropdown lọc theo nhóm hàng hóa (Danh mục) bên cạnh ô tìm kiếm -->
+            <select class="form-select form-select-sm" style="width: 200px;" [(ngModel)]="selectedCategoryId">
+              <option value="">Lọc theo nhóm hàng hóa</option>
+              <option *ngFor="let cat of categories" [value]="cat.id">
+                {{ cat.name }}
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <div class="card-body p-3">
+          <!-- Lưới sản phẩm dạng thẻ kèm hình ảnh -->
+          <div class="consult-product-grid">
+            <div
+              class="consult-product-card"
+              *ngFor="let prod of filteredConsultProducts"
+              (click)="addConsultProduct(prod)"
+              [title]="'Bấm để thêm ' + prod.name + ' vào hóa đơn'">
+              
+              <!-- Khung hình ảnh sản phẩm có badge giá xanh lá góc dưới -->
+              <div class="consult-img-container">
+                <div class="product-placeholder-box">
+                  <svg viewBox="0 0 24 24" width="46" height="46" fill="none" stroke="#94a3b8" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <path d="M16 10a4 4 0 0 1-8 0"></path>
+                  </svg>
+                </div>
+                <!-- Badge giá tiền màu xanh lá giống ảnh mẫu -->
+                <div class="consult-price-tag">
+                  {{ formatPrice(prod.price) }}
+                </div>
+              </div>
+
+              <!-- Tên và thông tin sản phẩm -->
+              <div class="consult-card-details">
+                <div class="consult-product-name" [title]="prod.name">
+                  {{ prod.name }}
+                </div>
+                <div class="consult-product-sub d-flex justify-content-between align-items-center mt-1">
+                  <span class="text-muted small">{{ prod.sku }}</span>
+                  <span class="badge bg-light text-muted border small">Tồn: {{ prod.stockQuantity }}</span>
+                </div>
+                <div class="consult-gift-badge" *ngIf="prod.giftProductName">
+                  Kèm quà: {{ prod.giftProductName }}
+                </div>
+              </div>
+            </div>
+
+            <!-- Khi không tìm thấy sản phẩm nào -->
+            <div class="col-12 text-center text-muted py-4 w-100" *ngIf="filteredConsultProducts.length === 0">
+              <p class="m-0 small">Không tìm thấy sản phẩm nào phù hợp với bộ lọc</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- CỘT PHẢI: KHÁCH HÀNG, DROPDOWN QUÀ TẶNG, DROPDOWN KHUYẾN MÃI & THANH TOÁN (5/12 CỘT) -->
+    <div class="col-xl-4 col-lg-5">
+      <div class="card border shadow-sm pos-checkout-card">
+        
+        <!-- Header thông tin thời gian & Cửa hàng -->
+        <div class="card-header bg-white py-2.5 px-3 border-bottom d-flex justify-content-between align-items-center">
+          <div class="d-flex align-items-center gap-2 text-muted small">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+            <span>{{ currentDateTime | date:'dd/MM/yyyy - HH:mm' }}</span>
+          </div>
+          <span class="badge bg-light text-dark border">
+            Tại quầy
+          </span>
+        </div>
+
+        <div class="card-body p-3">
+          
+          <!-- 1. THÔNG TIN KHÁCH HÀNG -->
+          <div class="pos-section mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-1.5">
+              <label class="form-label fw-bold text-dark fs-6 m-0">
+                Khách hàng <span class="text-danger">*</span>
+              </label>
+            </div>
+
+            <!-- Nếu chưa chọn khách hàng: ô tìm kiếm / filter họ tên, SĐT + Enter tạo nhanh -->
+            <div *ngIf="!selectedCustomerId" class="position-relative">
+              <div class="input-group">
+                <span class="input-group-text bg-white border-end-0 text-muted">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                  </svg>
+                </span>
+                <input
+                  type="text"
+                  class="form-control border-start-0 ps-0"
+                  placeholder="Nhập họ tên, số điện thoại..."
+                  [(ngModel)]="customerSearchTerm"
+                  (input)="onCustomerSearchInput()"
+                  (keydown.enter)="onCustomerSearchEnter()"
+                  (blur)="onCustomerSearchBlur()"
+                  autocomplete="off"
+                />
+                <button
+                  class="btn btn-dark d-flex align-items-center gap-1 fw-semibold px-3"
+                  type="button"
+                  (click)="openQuickCustomerModal()"
+                  title="Thêm khách hàng mới đầy đủ">
+                  + Khách
+                </button>
+              </div>
+
+              <!-- Dropdown gợi ý kết quả tìm kiếm khách hàng -->
+              <div
+                class="customer-search-dropdown shadow-lg border rounded-3 bg-white position-absolute start-0 end-0 mt-1"
+                style="z-index: 1050; max-height: 250px; overflow-y: auto;"
+                *ngIf="showCustomerDropdown && customerSearchTerm.trim().length > 0">
+                <div
+                  class="customer-dropdown-item p-2 border-bottom d-flex justify-content-between align-items-center"
+                  style="cursor: pointer;"
+                  *ngFor="let c of filteredCustomers"
+                  (mousedown)="selectCustomer(c)">
+                  <div>
+                    <div class="fw-semibold text-dark">{{ c.name }}</div>
+                    <div class="text-muted small" *ngIf="c.address">{{ c.address }}</div>
+                  </div>
+                  <span class="badge bg-light text-dark border">{{ c.phone }}</span>
+                </div>
+                <div
+                  class="p-2 text-center bg-light text-primary fw-medium small"
+                  style="cursor: pointer;"
+                  *ngIf="filteredCustomers.length === 0"
+                  (mousedown)="onCustomerSearchEnter()">
+                  ↵ Nhấn <strong>Enter</strong> để tạo nhanh khách "<strong>{{ customerSearchTerm }}</strong>"
+                </div>
+              </div>
+            </div>
+
+            <!-- Nếu đã chọn khách hàng: hiển thị card ĐẸP MẮT THEO HÌNH 2 -->
+            <div *ngIf="selectedCustomerId && selectedCustomer" class="customer-info-card border rounded-3 p-3 bg-white">
+              <div class="d-flex justify-content-between align-items-center gap-3">
+                <div class="flex-grow-1">
+                  <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                    <span class="customer-name fw-bold text-dark">{{ selectedCustomer.name }}</span>
+                    <span class="customer-phone-badge" *ngIf="selectedCustomer.phone && selectedCustomer.phone !== '0900000000'">
+                      {{ selectedCustomer.phone }}
+                    </span>
+                  </div>
+                  <div class="customer-address" *ngIf="selectedCustomer.address">
+                    {{ selectedCustomer.address }}
+                  </div>
+                  <div class="customer-address text-muted fst-italic" *ngIf="!selectedCustomer.address">
+                    Chưa có địa chỉ (Nhấn Đổi để nhập thêm địa chỉ)
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  class="btn-customer-change"
+                  (click)="openChangeCustomerModal()"
+                  title="Đổi hoặc thêm/sửa địa chỉ khách hàng">
+                  Đổi
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. CHỌN QUÀ TẶNG KÈM (Có thể tặng nhiều quà, lưu và đóng) -->
+          <div class="pos-section mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label fw-semibold text-dark m-0">Chọn quà tặng kèm</label>
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-primary py-0 px-2"
+                *ngIf="!showGiftSelector"
+                (click)="openGiftSelector()">
+                + Thêm quà
+              </button>
+            </div>
+
+            <!-- Khung chọn và lưu quà tặng -->
+            <div class="border rounded p-2.5 bg-light mb-2" *ngIf="showGiftSelector">
+              <div class="mb-2">
+                <label class="form-label small text-muted mb-1">Sản phẩm làm quà tặng (0đ):</label>
+                <select class="form-select form-select-sm" [(ngModel)]="giftProductIdToAdd">
+                  <option value="">-- Chọn sản phẩm làm quà tặng --</option>
+                  <option *ngFor="let g of availableGifts" [value]="g.id">
+                    {{ g.name }} (Mã: {{ g.sku }})
+                  </option>
+                </select>
+              </div>
+              <div class="d-flex align-items-center justify-content-between gap-2 mb-1">
+                <div class="d-flex align-items-center gap-1.5">
+                  <span class="small text-muted">Số lượng:</span>
+                  <input
+                    type="number"
+                    class="form-control form-control-sm text-center"
+                    style="width: 65px;"
+                    min="1"
+                    [(ngModel)]="giftQuantityToAdd"
+                  />
+                </div>
+                <div class="d-flex gap-1.5">
+                  <button type="button" class="btn btn-sm btn-secondary" (click)="closeGiftSelector()">Đóng</button>
+                  <button type="button" class="btn btn-sm btn-primary" (click)="saveGiftItem()" [disabled]="!giftProductIdToAdd">Lưu quà</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. CHƯƠNG TRÌNH KHUYẾN MÃI (4 chương trình của shop) -->
+          <div class="pos-section mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label fw-semibold text-dark m-0">
+                Chương trình khuyến mãi
               </label>
               <button
-                *ngIf="selectedPromotionCode || discountPercent > 0 || discountFixedAmount > 0"
-                class="btn btn-link btn-sm text-danger p-0 text-decoration-none"
+                *ngIf="selectedPromotionCode"
+                class="btn btn-link btn-sm text-danger p-0 text-decoration-none small"
                 (click)="clearDiscount()">
-                Gỡ giảm giá
+                Gỡ bỏ
               </button>
             </div>
 
-            <!-- Preset Hover Chips -->
-            <div class="d-flex flex-wrap gap-2 mb-2">
-              <button
-                *ngFor="let p of presetDiscounts"
-                type="button"
-                class="btn btn-sm promo-chip d-flex align-items-center gap-1 border"
-                [ngClass]="selectedPromotionCode === p.code ? 'btn-' + p.color + ' text-white shadow-sm' : 'btn-outline-' + p.color"
-                (click)="applyPreset(p)"
-                [title]="'Áp dụng mã ' + p.code + ' (-' + (p.discountType === 1 ? p.value + '%' : (p.value | number) + 'đ') + ')'">
-                <span>⚡ {{ p.code }}</span>
-                <span class="badge bg-white text-dark font-monospace">{{ p.label }}</span>
-              </button>
-            </div>
-
-            <!-- Các khuyến mãi cửa hàng đã tạo (nếu có) -->
-            <div class="d-flex flex-wrap gap-1 mb-2" *ngIf="promotions.length > 0">
-              <button
-                *ngFor="let promo of promotions"
-                type="button"
-                class="btn btn-sm promo-chip d-flex align-items-center gap-1 border"
-                [ngClass]="selectedPromotionCode === promo.code ? 'btn-danger text-white shadow-sm' : 'btn-outline-secondary'"
-                (click)="applyPromotion(promo)"
-                [title]="promo.name + ' - ' + (promo.description || '')">
-                <span>🏷️ {{ promo.code }}</span>
-                <span class="badge bg-light text-dark">
-                  {{ promo.discountType === 1 ? '-' + promo.value + '%' : '-' + (promo.value | number:'1.0-0') + 'đ' }}
-                </span>
-              </button>
-            </div>
-
-            <!-- Tùy chỉnh giảm giá khác (% hoặc VND) -->
-            <div class="row g-2 align-items-center mt-1">
-              <div class="col-6">
-                <div class="input-group input-group-sm">
-                  <span class="input-group-text">Chiết khấu %</span>
-                  <input
-                    type="number"
-                    class="form-control text-end font-monospace"
-                    min="0"
-                    max="100"
-                    placeholder="0"
-                    [ngModel]="discountMode === 'PERCENT' ? discountPercent : 0"
-                    (ngModelChange)="setCustomPercent($event)">
-                  <span class="input-group-text">%</span>
-                </div>
-              </div>
-              <div class="col-6">
-                <div class="input-group input-group-sm">
-                  <span class="input-group-text">Số tiền</span>
-                  <input
-                    type="number"
-                    class="form-control text-end font-monospace"
-                    min="0"
-                    step="10000"
-                    placeholder="0"
-                    [ngModel]="discountMode === 'AMOUNT' ? discountFixedAmount : 0"
-                    (ngModelChange)="setCustomAmount($event)">
-                  <span class="input-group-text">đ</span>
-                </div>
-              </div>
-            </div>
+            <select
+              class="form-select"
+              [(ngModel)]="selectedPromotionCode"
+              (ngModelChange)="onPromoSelect($event)">
+              <option [ngValue]="null">-- Không áp dụng khuyến mãi --</option>
+              <option *ngFor="let promo of promotions" [value]="promo.code">
+                {{ promo.code }} - {{ promo.name }} (-{{ promo.discountType === 1 ? promo.value + '%' : formatPrice(promo.value) + 'đ' }})
+              </option>
+            </select>
           </div>
 
-          <!-- Chi tiết bảng tính tài chính -->
-          <div class="border-top pt-2">
-            <div class="d-flex justify-content-between small text-muted mb-1">
-              <span>Tạm tính:</span>
-              <span class="fw-semibold">{{ subTotal | number:'1.0-0' }} VND</span>
+          <!-- 4. CHI TIẾT TÍNH TIỀN TÀI CHÍNH -->
+          <div class="border-top pt-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="text-muted">Tổng tiền hàng:</span>
+              <span class="fw-semibold text-dark fs-6">{{ formatPrice(subTotal) }}đ</span>
             </div>
 
-            <div class="d-flex justify-content-between small text-danger mb-1" *ngIf="calculatedDiscount > 0">
+            <div class="d-flex justify-content-between align-items-center mb-2 text-danger" *ngIf="calculatedDiscount > 0">
               <span class="d-flex align-items-center gap-1">
                 <span>Giảm giá</span>
-                <span class="badge bg-danger-subtle text-danger border border-danger-subtle" *ngIf="selectedPromotionCode">{{ selectedPromotionCode }}</span>:
+                <span class="badge bg-danger-subtle text-danger border border-danger-subtle" *ngIf="selectedPromotionCode">
+                  {{ selectedPromotionCode }}
+                </span>:
               </span>
-              <span class="fw-bold">-{{ calculatedDiscount | number:'1.0-0' }} VND</span>
+              <span class="fw-bold fs-6">-{{ formatPrice(calculatedDiscount) }}đ</span>
             </div>
 
-            <div class="d-flex justify-content-between small text-success mb-1" *ngIf="giftItemsCount > 0">
-              <span>🎁 Quà tặng kèm ({{ giftItemsCount }} món):</span>
-              <span class="badge bg-success-subtle text-success border border-success-subtle">Miễn phí 0đ</span>
+            <div class="d-flex justify-content-between align-items-center flex-nowrap py-2.5 my-2 border-top border-bottom bg-light px-3 rounded-2 total-row">
+              <span class="fw-bold text-dark text-nowrap total-label">Tổng tiền:</span>
+              <span class="fw-bold text-danger text-nowrap total-value">
+                {{ formatPrice(totalAmount) }} VND
+              </span>
             </div>
 
-            <div class="d-flex justify-content-between align-items-center my-2 pt-2 border-top">
-              <span class="fs-5 fw-bold text-dark">Tổng thanh toán:</span>
-              <span class="fs-3 fw-bold text-danger">
-                {{ totalAmount | number:'1.0-0' }} VND
-              </span>
+            <!-- 5. TIỀN MẶT & KHÁCH ĐƯA -->
+            <div class="cash-section mt-3">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <label class="form-label small fw-semibold text-dark m-0">Tiền khách đưa:</label>
+                <button
+                  type="button"
+                  class="btn btn-link btn-sm text-primary p-0 text-decoration-none small"
+                  (click)="setExactCash()">
+                  Đủ tiền
+                </button>
+              </div>
+
+              <div class="input-group mb-2">
+                <input
+                  type="text"
+                  class="form-control text-end fw-bold fs-6"
+                  placeholder="0"
+                  [ngModel]="cashInputValue"
+                  (ngModelChange)="onCashInputChange($event)"
+                  (blur)="onCashBlur()"
+                />
+                <span class="input-group-text bg-light text-dark">đ</span>
+              </div>
+
+              <!-- Gợi ý tiền mặt nhanh (font chữ đồng nhất sạch đẹp) -->
+              <div class="d-flex gap-2 mb-2 quick-cash-buttons">
+                <button type="button" class="btn btn-outline-secondary btn-sm flex-fill py-1.5 fw-medium" (click)="setCash(500000)">
+                  500.000
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm flex-fill py-1.5 fw-medium" (click)="setCash(200000)">
+                  200.000
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm flex-fill py-1.5 fw-medium" (click)="setCash(100000)">
+                  100.000
+                </button>
+              </div>
+
+              <!-- Tự động tính tiền khách thiếu hoặc tiền trả lại -->
+              <div class="p-2 bg-light rounded border mt-2" *ngIf="customerCash && customerCash > 0">
+                <!-- Khách còn thiếu -->
+                <div class="d-flex justify-content-between align-items-center text-danger" *ngIf="customerCash < totalAmount">
+                  <span class="fw-semibold small">Khách còn thiếu:</span>
+                  <span class="fw-bold fs-6">{{ formatPrice(totalAmount - customerCash) }}đ</span>
+                </div>
+
+                <!-- Trả lại khách (Hình 3) -->
+                <div class="d-flex justify-content-between align-items-center text-dark" *ngIf="customerCash > totalAmount">
+                  <span class="fw-semibold small">Trả lại khách:</span>
+                  <span class="fw-bold fs-6 text-success">{{ formatPrice(customerCash - totalAmount) }}đ</span>
+                </div>
+
+                <!-- Đã đưa đủ -->
+                <div class="d-flex justify-content-between align-items-center text-dark" *ngIf="customerCash === totalAmount">
+                  <span class="fw-semibold small">Trả lại khách:</span>
+                  <span class="fw-bold fs-6 text-muted">0đ (Đã đưa đủ)</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Ghi chú đơn hàng -->
+            <div class="mt-3">
+              <input
+                type="text"
+                class="form-control form-control-sm"
+                placeholder="Ghi chú đơn hàng..."
+                [(ngModel)]="orderNote"
+              />
+            </div>
+
+            <!-- 6. NÚT HÀNH ĐỘNG: LƯU TẠM & XÁC NHẬN -->
+            <div class="d-flex gap-2 mt-3 pt-2">
+              <button
+                type="button"
+                class="btn btn-outline-secondary py-2.5 flex-fill fw-semibold"
+                (click)="saveDraft()">
+                Lưu tạm
+              </button>
+              <button
+                type="button"
+                class="btn btn-primary py-2.5 flex-fill fw-bold fs-6 shadow-sm d-flex align-items-center justify-content-center gap-1"
+                (click)="onSubmit()"
+                [disabled]="submitting || !selectedCustomerId || cart.length === 0">
+                <span class="spinner-border spinner-border-sm me-1" *ngIf="submitting"></span>
+                <span>{{ submitting ? 'Đang xử lý...' : 'Xác nhận' }}</span>
+              </button>
             </div>
           </div>
 
-          <button
-            class="btn btn-primary w-100 py-2.5 mt-2 fw-semibold fs-6 shadow-sm"
-            (click)="onSubmit()"
-            [disabled]="submitting || !selectedCustomerId || cart.length === 0">
-            <span class="spinner-border spinner-border-sm me-1" *ngIf="submitting"></span>
-            {{ submitting ? 'Đang tạo đơn...' : 'Tạo đơn hàng (Lên đơn)' }}
-          </button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Modal Thêm Khách Hàng Nhanh -->
+  <!-- MODAL THÊM / ĐỔI KHÁCH HÀNG -->
   <div class="modal-backdrop fade show" *ngIf="showQuickCustomerModal" (click)="closeQuickCustomerModal()"></div>
   <div class="modal fade show d-block" tabindex="-1" *ngIf="showQuickCustomerModal">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content shadow-lg border-0">
         <div class="modal-header border-bottom">
-          <h5 class="modal-title d-flex align-items-center gap-2">
-            <span>👤</span> Thêm khách hàng mới nhanh
+          <h5 class="modal-title fw-bold text-dark">
+            {{ selectedCustomerId ? 'Cập nhật thông tin khách hàng' : 'Thêm khách hàng mới nhanh' }}
           </h5>
           <button type="button" class="btn-close" (click)="closeQuickCustomerModal()"></button>
         </div>
@@ -310,7 +663,7 @@
             <input
               type="text"
               class="form-control"
-              placeholder="VD: Trinh Mai, Nguyễn Văn A..."
+              placeholder="VD: Tuấn Tài, Trinh Mai..."
               [(ngModel)]="quickCustomer.name"
               autofocus
             />
@@ -318,7 +671,7 @@
 
           <!-- Số điện thoại -->
           <div class="mb-3">
-            <label class="form-label fw-semibold">Số điện thoại <span class="text-danger">*</span></label>
+            <label class="form-label fw-semibold">Số điện thoại</label>
             <input
               type="tel"
               class="form-control"
@@ -333,19 +686,183 @@
             <textarea
               class="form-control"
               rows="2"
-              placeholder="VD: 123 Nguyễn Huệ, Quận 1, TP. Hồ Chí Minh"
+              placeholder="VD: Số 48, Đường TI 16, Khu Phố 3b, Phường An Phú Đông, Thành phố Hồ Chí Minh"
               [(ngModel)]="quickCustomer.address">
             </textarea>
           </div>
         </div>
+        <div class="modal-footer border-top bg-light d-flex justify-content-between">
+          <div>
+            <button
+              *ngIf="selectedCustomerId"
+              type="button"
+              class="btn btn-outline-secondary btn-sm"
+              (click)="chooseAnotherCustomer()">
+              Chọn khách khác
+            </button>
+          </div>
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-secondary" (click)="closeQuickCustomerModal()" [disabled]="savingCustomer">Hủy</button>
+            <button type="button" class="btn btn-primary d-flex align-items-center gap-2" (click)="saveQuickCustomer()" [disabled]="savingCustomer">
+              <span class="spinner-border spinner-border-sm" *ngIf="savingCustomer"></span>
+              {{ savingCustomer ? 'Đang lưu...' : (selectedCustomerId ? 'Lưu thay đổi' : 'Lưu khách hàng & Chọn') }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL QUÉT ĐƠN HÀNG BẰNG AI -->
+  <div class="modal-backdrop fade show" *ngIf="showAiScanModal" (click)="closeAiScanModal()"></div>
+  <div class="modal fade show d-block" tabindex="-1" *ngIf="showAiScanModal">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content shadow-lg border-0">
+        <div class="modal-header border-bottom bg-light">
+          <h5 class="modal-title fw-bold text-dark">
+            Quét hóa đơn / Đơn hàng bằng AI
+          </h5>
+          <button type="button" class="btn-close" (click)="closeAiScanModal()"></button>
+        </div>
+        <div class="modal-body p-4">
+          <div class="row g-3">
+            <!-- Cột trái: Tải ảnh & Chọn mẫu -->
+            <div class="col-md-6">
+              <div class="upload-dropzone border border-2 border-dashed rounded-3 p-4 text-center bg-light position-relative"
+                   style="cursor: pointer;"
+                   (click)="fileInput.click()">
+                <input
+                  #fileInput
+                  type="file"
+                  class="d-none"
+                  accept="image/*"
+                  (change)="onAiFileSelected($event)"
+                />
+                <div *ngIf="!aiImagePreview">
+                  <div class="fw-bold text-dark mt-2">Tải ảnh hóa đơn / đơn hàng lên</div>
+                  <p class="text-muted small mb-3">Hỗ trợ ảnh chụp điện thoại, hóa đơn viết tay, phiếu giao hàng, ảnh màn hình...</p>
+                  <button type="button" class="btn btn-sm btn-primary px-3 shadow-sm">
+                    Chọn ảnh từ máy / Chụp ảnh
+                  </button>
+                </div>
+                <div *ngIf="aiImagePreview" class="position-relative">
+                  <img [src]="aiImagePreview" class="img-fluid rounded border shadow-sm" style="max-height: 220px; object-fit: contain;" alt="Ảnh hóa đơn" />
+                  <div class="mt-2 text-center">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" (click)="$event.stopPropagation(); fileInput.click()">
+                      Đổi ảnh khác
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Thử nghiệm nhanh với mẫu có sẵn -->
+              <div class="mt-3">
+                <label class="form-label small text-muted fw-semibold mb-1">Hoặc thử nhanh với ảnh mẫu có sẵn:</label>
+                <div class="d-flex flex-wrap gap-2">
+                  <button type="button" class="btn btn-sm btn-outline-secondary" (click)="scanSample('retail')" [disabled]="aiScanning">
+                    Hóa đơn bán lẻ
+                  </button>
+                  <button type="button" class="btn btn-sm btn-outline-secondary" (click)="scanSample('delivery')" [disabled]="aiScanning">
+                    Phiếu giao hàng
+                  </button>
+                  <button type="button" class="btn btn-sm btn-outline-secondary" (click)="scanSample('handwritten')" [disabled]="aiScanning">
+                    Đơn viết tay
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Cột phải: Trạng thái & Kết quả nhận diện -->
+            <div class="col-md-6 border-start ps-md-4">
+              <!-- Loading -->
+              <div *ngIf="aiScanning" class="text-center py-5">
+                <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;" role="status"></div>
+                <div class="fw-bold text-dark fs-6">AI Gemini đang đọc hóa đơn...</div>
+                <p class="text-muted small mt-1">Đang trích xuất thông tin khách hàng, số điện thoại, danh sách sản phẩm và đơn giá...</p>
+              </div>
+
+              <!-- Error Alert -->
+              <div class="alert alert-danger" *ngIf="aiErrorMessage && !aiScanning">
+                {{ aiErrorMessage }}
+              </div>
+
+              <!-- Chờ quét -->
+              <div *ngIf="!aiScanning && !aiScannedResult && !aiErrorMessage" class="text-center py-5 text-muted">
+                <p class="mt-2 mb-0 fw-medium">Chưa có dữ liệu hóa đơn</p>
+                <small>Hãy chọn ảnh hóa đơn hoặc bấm mẫu hóa đơn bên trái để AI trích xuất.</small>
+              </div>
+
+              <!-- Kết quả trích xuất -->
+              <div *ngIf="!aiScanning && aiScannedResult">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <span class="badge bg-light text-dark border px-2 py-1">
+                    Nhận diện thành công (Độ tin cậy: {{ formatPrice(aiScannedResult.aiConfidence * 100) }}%)
+                  </span>
+                </div>
+
+                <!-- Khách hàng nhận diện -->
+                <div class="bg-light p-2.5 rounded border mb-2.5">
+                  <div class="fw-bold text-dark small mb-1">Khách hàng nhận diện:</div>
+                  <div class="small">
+                    <strong>Họ tên:</strong> {{ aiScannedResult.customerName || 'Chưa rõ' }}
+                  </div>
+                  <div class="small">
+                    <strong>SĐT:</strong> {{ aiScannedResult.phone || 'Chưa rõ' }}
+                  </div>
+                  <div class="small" *ngIf="aiScannedResult.address">
+                    <strong>Địa chỉ:</strong> {{ aiScannedResult.address }}
+                  </div>
+                </div>
+
+                <!-- Sản phẩm nhận diện -->
+                <div class="mb-2">
+                  <div class="fw-bold text-dark small mb-1">Sản phẩm nhận diện ({{ aiScannedResult.items.length }} món):</div>
+                  <div class="table-responsive" style="max-height: 170px; overflow-y: auto;">
+                    <table class="table table-sm table-bordered align-middle mb-0 small">
+                      <thead class="table-light">
+                        <tr>
+                          <th>Tên sản phẩm</th>
+                          <th class="text-center" style="width: 45px;">SL</th>
+                          <th class="text-end" style="width: 85px;">Đơn giá</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr *ngFor="let item of aiScannedResult.items">
+                          <td>
+                            <div class="fw-semibold text-dark text-truncate" style="max-width: 140px;" [title]="item.productName">
+                              {{ item.productName }}
+                            </div>
+                            <span class="badge bg-success-subtle text-success border" *ngIf="item.isMatched">✓ Khớp kho</span>
+                            <span class="badge bg-warning-subtle text-warning-emphasis border" *ngIf="!item.isMatched">Tự khớp</span>
+                          </td>
+                          <td class="text-center fw-bold">{{ item.quantity }}</td>
+                          <td class="text-end fw-semibold">{{ formatPrice(item.unitPrice) }}đ</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center small text-muted pt-2 border-top">
+                  <span>Tổng tiền nhận diện:</span>
+                  <span class="fw-bold text-danger fs-6">{{ formatPrice(aiScannedResult.totalAmount) }}đ</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
         <div class="modal-footer border-top bg-light">
-          <button type="button" class="btn btn-secondary" (click)="closeQuickCustomerModal()" [disabled]="savingCustomer">Hủy</button>
-          <button type="button" class="btn btn-primary d-flex align-items-center gap-2" (click)="saveQuickCustomer()" [disabled]="savingCustomer">
-            <span class="spinner-border spinner-border-sm" *ngIf="savingCustomer"></span>
-            {{ savingCustomer ? 'Đang lưu...' : 'Lưu khách hàng & Chọn' }}
+          <button type="button" class="btn btn-secondary" (click)="closeAiScanModal()">Đóng</button>
+          <button
+            type="button"
+            class="btn btn-success d-flex align-items-center fw-bold shadow-sm px-3"
+            [disabled]="aiScanning || !aiScannedResult"
+            (click)="applyAiResultToSales()">
+            <span>Áp dụng vào đơn bán hàng</span>
           </button>
         </div>
       </div>
     </div>
   </div>
 </div>
+

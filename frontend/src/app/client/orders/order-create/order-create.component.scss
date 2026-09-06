@@ -1,13 +1,342 @@
-.promo-chip {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  cursor: pointer;
+.pos-wrapper {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: #111827;
 
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+  h1, h2, h3, h4, h5, h6, .card-header, .form-label, strong {
+    color: #111827;
+    font-family: inherit;
   }
-}
 
-.table-warning-subtle {
-  background-color: #fff9db !important;
+  // Search Header & Dropdown
+  .pos-search-card {
+    border-radius: 10px;
+
+    .search-dropdown-menu {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      right: 0;
+      z-index: 1050;
+      max-height: 380px;
+      overflow-y: auto;
+      background: #ffffff;
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15);
+
+      .search-dropdown-item {
+        cursor: pointer;
+        transition: background-color 0.15s ease;
+
+        &:hover {
+          background-color: #f1f5f9;
+        }
+
+        .product-mini-icon {
+          width: 38px;
+          height: 38px;
+          background: #f8fafc;
+          border: 1px solid #e2e8f0;
+          border-radius: 8px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 18px;
+        }
+      }
+    }
+  }
+
+  // Cart Section
+  .pos-cart-card {
+    border-radius: 10px;
+    min-height: 240px;
+
+    .empty-cart-view {
+      .empty-icon-box {
+        transition: transform 0.2s ease;
+        &:hover {
+          transform: translateY(-2px);
+        }
+      }
+    }
+
+    .pos-cart-table {
+      thead th {
+        font-weight: 600;
+        background-color: #f8fafc;
+      }
+
+      .gift-row {
+        background-color: #fffbeb !important;
+      }
+
+      .qty-control {
+        background-color: #ffffff;
+        button {
+          line-height: 1;
+          font-size: 15px;
+          font-weight: bold;
+          text-decoration: none;
+          &:hover {
+            color: #0d6efd !important;
+          }
+        }
+      }
+
+      .price-edit-box {
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        &:focus-within {
+          border-color: #0d6efd !important;
+          box-shadow: 0 0 0 0.15rem rgba(13, 110, 253, 0.18);
+        }
+        input {
+          font-size: 13px;
+          &:focus {
+            box-shadow: none;
+            outline: none;
+          }
+        }
+      }
+
+      .btn-cart-remove {
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: #ef4444;
+        background: transparent;
+        border: none;
+        outline: none;
+        text-decoration: none !important;
+        cursor: pointer;
+        transition: all 0.15s ease;
+
+        &:hover {
+          background-color: #fee2e2;
+          color: #b91c1c;
+          text-decoration: none !important;
+        }
+      }
+    }
+  }
+
+  // Tư vấn bán hàng (Lưới sản phẩm)
+  .pos-consult-card {
+    border-radius: 10px;
+
+    .consult-product-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 12px;
+
+      .consult-product-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        overflow: hidden;
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        display: flex;
+        flex-direction: column;
+
+        &:hover {
+          transform: translateY(-3px);
+          box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+          border-color: #0d6efd;
+        }
+
+        .consult-img-container {
+          position: relative;
+          aspect-ratio: 1 / 1;
+          background-color: #f1f5f9;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          .product-placeholder-box {
+            opacity: 0.85;
+            transition: transform 0.2s ease;
+          }
+
+          &:hover .product-placeholder-box {
+            transform: scale(1.05);
+          }
+
+          // Badge giá tiền màu xanh lá góc dưới phải (giống hệt ảnh mẫu)
+          .consult-price-tag {
+            position: absolute;
+            bottom: 6px;
+            right: 6px;
+            background-color: #16a34a; // Vibrant green badge
+            color: #ffffff;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+            letter-spacing: 0.2px;
+          }
+        }
+
+        .consult-card-details {
+          padding: 8px;
+          display: flex;
+          flex-direction: column;
+          flex-grow: 1;
+
+          .consult-product-name {
+            font-size: 12px;
+            font-weight: 600;
+            color: #1e293b;
+            line-height: 1.35;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            min-height: 32px;
+          }
+
+          .consult-gift-badge {
+            font-size: 10px;
+            font-weight: 600;
+            color: #b45309;
+            background: #fef3c7;
+            padding: 2px 4px;
+            border-radius: 4px;
+            margin-top: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+        }
+      }
+    }
+  }
+
+  // Cột phải Checkout Card
+  .pos-checkout-card {
+    border-radius: 10px;
+    position: sticky;
+    top: 75px;
+
+    .pos-section {
+      background-color: #ffffff;
+    }
+
+    // Customer Card theo Hình 2
+    .customer-info-card {
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 12px 14px;
+      background: #ffffff;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+      transition: border-color 0.15s ease;
+
+      &:hover {
+        border-color: #cbd5e1;
+      }
+
+      .customer-name {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: #111827;
+      }
+
+      .customer-phone-badge {
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: #111827;
+        background: #ffffff;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        padding: 2px 8px;
+        line-height: 1.3;
+      }
+
+      .customer-address {
+        font-size: 0.875rem;
+        color: #4b5563;
+        line-height: 1.45;
+      }
+
+      .btn-customer-change {
+        border: 1px solid #d1d5db;
+        background: #ffffff;
+        color: #111827;
+        font-size: 0.95rem;
+        font-weight: 500;
+        padding: 6px 14px;
+        border-radius: 6px;
+        line-height: 1.2;
+        cursor: pointer;
+        flex-shrink: 0;
+        transition: all 0.15s ease;
+
+        &:hover {
+          background-color: #f3f4f6;
+          border-color: #9ca3af;
+          color: #111827;
+        }
+      }
+    }
+
+    .customer-search-dropdown {
+      .customer-dropdown-item {
+        transition: background-color 0.15s ease;
+        &:hover {
+          background-color: #f8fafc;
+        }
+      }
+    }
+
+    .total-row {
+      white-space: nowrap !important;
+      gap: 8px;
+
+      .total-label {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #111827;
+        font-family: inherit;
+        white-space: nowrap !important;
+      }
+
+      .total-value {
+        font-size: 1.35rem;
+        font-weight: 800;
+        color: #dc2626 !important;
+        font-family: inherit;
+        white-space: nowrap !important;
+        letter-spacing: normal;
+      }
+    }
+
+    .quick-cash-buttons button {
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      color: #374151;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      background: #ffffff;
+      transition: all 0.15s ease;
+
+      &:hover {
+        background-color: #f3f4f6;
+        border-color: #9ca3af;
+        color: #111827;
+      }
+    }
+  }
+
+  // AI Modal Dropzone
+  .upload-dropzone {
+    border-color: #cbd5e1 !important;
+    transition: all 0.2s ease;
+    &:hover {
+      border-color: #0d6efd !important;
+      background-color: #f8fafc !important;
+    }
+  }
 }

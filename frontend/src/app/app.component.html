@@ -287,8 +287,8 @@
         </span>
       </div>
 
-      <div class="topbar-right">
-        <!-- Quick Dev Links: Swagger & Seq -->
+      <div class="topbar-right" *ngIf="auth.isAdmin">
+        <!-- Quick Dev Links: Swagger & Seq (Chỉ Super Admin mới xem được) -->
         <a href="http://localhost:5001/swagger" target="_blank" class="topbar-tool-chip" title="Mở tài liệu API Swagger">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1">
             <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
