@@ -31,14 +31,27 @@ public static class AiScannerEndpoints
 
             byte[] bytes;
             string contentType = "image/jpeg";
+            string? sampleType = request.Query["sampleType"].FirstOrDefault();
 
-            if (request.HasFormContentType && request.Form.Files.Count > 0)
+            if (request.HasFormContentType)
             {
-                var image = request.Form.Files[0];
-                using var ms = new MemoryStream();
-                await image.CopyToAsync(ms, ct);
-                bytes = ms.ToArray();
-                contentType = image.ContentType;
+                if (request.Form.Files.Count > 0)
+                {
+                    var image = request.Form.Files[0];
+                    using var ms = new MemoryStream();
+                    await image.CopyToAsync(ms, ct);
+                    bytes = ms.ToArray();
+                    contentType = image.ContentType;
+                }
+                else
+                {
+                    bytes = Encoding.UTF8.GetBytes("sample-invoice-image");
+                }
+
+                if (string.IsNullOrWhiteSpace(sampleType) && request.Form.TryGetValue("sampleType", out var formSample))
+                {
+                    sampleType = formSample.FirstOrDefault();
+                }
             }
             else
             {
@@ -46,7 +59,16 @@ public static class AiScannerEndpoints
                 bytes = Encoding.UTF8.GetBytes("sample-invoice-image");
             }
 
-            var result = await aiService.ExtractInvoiceFromImageAsync(bytes, contentType, storeId.Value, ct);
+            var customApiKey = request.Headers["X-Gemini-Key"].FirstOrDefault();
+
+            var result = await aiService.ExtractInvoiceFromImageAsync(
+                bytes, 
+                contentType, 
+                storeId.Value, 
+                customApiKey, 
+                sampleType, 
+                ct);
+
             return Results.Ok(result);
         }).DisableAntiforgery();
 
@@ -153,118 +175,6 @@ public static class AiScannerEndpoints
                 true
             ));
         });
-
-        // 3. Endpoint dành riêng cho thiết bị IoT (ESP32-CAM / Raspberry Pi)
-        // Chụp ảnh -> Quét AI -> Tự tạo đơn -> Trả về kết quả cho IoT bật đèn/chuông
-        var iotGroup = app.MapGroup("/api/iot/orders")
-            .WithTags("IoT Smart Dispatch Station");
-
-        iotGroup.MapPost("/scan-and-create", async (
-            HttpRequest request,
-            [FromHeader(Name = "X-Store-Id")] string? storeIdHeader,
-            IAiVisionService aiService,
-            AppDbContext db,
-            CancellationToken ct) =>
-        {
-            Store? store = null;
-            if (Guid.TryParse(storeIdHeader, out var storeGuid))
-            {
-                store = await db.Stores.FirstOrDefaultAsync(s => s.Id == new StoreId(storeGuid), ct);
-            }
-            store ??= await db.Stores.FirstOrDefaultAsync(ct);
-
-            if (store is null)
-            {
-                return Results.BadRequest(new { error = "Không tìm thấy cửa hàng hợp lệ trên hệ thống." });
-            }
-
-            byte[] bytes;
-            string contentType = "image/jpeg";
-            if (request.HasFormContentType && request.Form.Files.Count > 0)
-            {
-                var image = request.Form.Files[0];
-                using var ms = new MemoryStream();
-                await image.CopyToAsync(ms, ct);
-                bytes = ms.ToArray();
-                contentType = image.ContentType;
-            }
-            else
-            {
-                bytes = Encoding.UTF8.GetBytes("iot-trigger-snapshot");
-            }
-
-            // 1. Quét thông tin bằng AI Vision
-            var scanned = await aiService.ExtractInvoiceFromImageAsync(bytes, contentType, store.Id.Value, ct);
-
-            // 2. Tạo khách hàng
-            var customer = await db.Customers.FirstOrDefaultAsync(c => c.StoreId == store.Id && c.Phone == scanned.Phone, ct);
-            if (customer is null)
-            {
-                customer = Customer.Create(store.Id, scanned.CustomerName, scanned.Phone, null, scanned.Address);
-                db.Customers.Add(customer);
-                await db.SaveChangesAsync(ct);
-            }
-
-            // 3. Tạo đơn hàng và trừ kho
-            var orderId = OrderId.New();
-            var orderItems = new List<OrderItem>();
-            var products = await db.Products.Where(p => p.StoreId == store.Id).ToListAsync(ct);
-
-            foreach (var itm in scanned.Items)
-            {
-                var prod = products.FirstOrDefault(p => p.Id.Value == itm.MatchedProductId) 
-                        ?? products.FirstOrDefault();
-
-                if (prod is not null)
-                {
-                    prod.AdjustStock(-itm.Quantity);
-                    orderItems.Add(OrderItem.Create(orderId, prod.Id, prod.Name.Value, Money.VND(itm.UnitPrice), itm.Quantity));
-                }
-            }
-
-            if (orderItems.Count == 0 && products.Count > 0)
-            {
-                var defaultProd = products[0];
-                defaultProd.AdjustStock(-1);
-                orderItems.Add(OrderItem.Create(orderId, defaultProd.Id, defaultProd.Name.Value, defaultProd.Price, 1));
-            }
-
-            var orderCode = $"ORD-IOT-{DateTime.UtcNow:yyyyMMdd}-{Random.Shared.Next(1000, 9999)}";
-            var order = Order.Create(store.Id, customer.Id, orderCode, orderItems);
-            order.Confirm();
-            db.Orders.Add(order);
-
-            // 4. Outbox sync Google Sheets
-            var outboxPayload = JsonSerializer.Serialize(new
-            {
-                orderId = order.Id.Value,
-                orderCode = order.Code,
-                customerName = customer.Name,
-                customerPhone = customer.Phone,
-                customerAddress = customer.Address,
-                totalAmount = order.TotalAmount.Amount,
-                currency = "VND",
-                itemsCount = order.Items.Count,
-                source = "IoT_Smart_Station",
-                status = "Confirmed",
-                createdAt = DateTime.UtcNow
-            });
-            db.OutboxMessages.Add(OutboxMessage.Create(store.Id, "OrderCreated", outboxPayload));
-            await db.SaveChangesAsync(ct);
-
-            return Results.Ok(new
-            {
-                success = true,
-                message = "Đơn hàng đã được nhận diện và nhập thành công!",
-                orderId = order.Id.Value,
-                orderCode = order.Code,
-                customer = customer.Name,
-                totalAmount = order.TotalAmount.Amount,
-                currency = "VND",
-                itemsCount = order.Items.Count,
-                syncedToGoogleSheets = true
-            });
-        }).DisableAntiforgery();
 
         return app;
     }

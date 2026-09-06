@@ -8,5 +8,7 @@ public interface IAiVisionService
         byte[] imageBytes, 
         string contentType, 
         Guid storeId, 
+        string? customApiKey = null,
+        string? sampleType = null,
         CancellationToken ct = default);
 }

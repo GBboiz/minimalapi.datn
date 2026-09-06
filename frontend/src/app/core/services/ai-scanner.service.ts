@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
@@ -13,12 +13,39 @@ export class AiScannerService {
   private http = inject(HttpClient);
   private readonly baseUrl = `${environment.apiUrl}/ai`;
 
-  scanInvoice(file?: File): Observable<ScannedInvoice> {
+  getGeminiApiKey(): string {
+    return localStorage.getItem('gemini_api_key') || '';
+  }
+
+  setGeminiApiKey(key: string): void {
+    if (key.trim()) {
+      localStorage.setItem('gemini_api_key', key.trim());
+    } else {
+      localStorage.removeItem('gemini_api_key');
+    }
+  }
+
+  scanInvoice(file?: File, sampleType?: string): Observable<ScannedInvoice> {
     const formData = new FormData();
     if (file) {
       formData.append('image', file, file.name);
     }
-    return this.http.post<ScannedInvoice>(`${this.baseUrl}/scan`, formData);
+    if (sampleType) {
+      formData.append('sampleType', sampleType);
+    }
+
+    let headers = new HttpHeaders();
+    const apiKey = this.getGeminiApiKey();
+    if (apiKey) {
+      headers = headers.set('X-Gemini-Key', apiKey);
+    }
+
+    let params = new HttpParams();
+    if (sampleType) {
+      params = params.set('sampleType', sampleType);
+    }
+
+    return this.http.post<ScannedInvoice>(`${this.baseUrl}/scan`, formData, { headers, params });
   }
 
   confirmScannedOrder(req: ConfirmScannedOrderRequest): Observable<ConfirmScannedOrderResponse> {

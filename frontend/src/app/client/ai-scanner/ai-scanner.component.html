@@ -7,20 +7,34 @@
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1">
             <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
           </svg>
-          Giai đoạn 1: IoT & AI Vision
+          Phân Hệ AI: Trợ Lý Bóc Tách Hóa Đơn (AI Vision Scanner)
         </span>
         <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1 rounded-pill">
-          Gemini 2.5 Flash + Dual-Mode Offline
+          Gemini 1.5 Flash + Smart Dual-Mode
         </span>
       </div>
-      <h2 class="h4 fw-bold text-dark mb-1">Quét Hóa Đơn Tự Động Bằng AI</h2>
+      <h2 class="h4 fw-bold text-dark mb-1">Quét Hóa Đơn &amp; Nhập Đơn Tự Động Bằng AI</h2>
       <p class="text-muted small mb-0">
-        Chụp hóa đơn/phiếu giao hàng hoặc tải ảnh lên &rarr; AI Vision tự bóc tách thực thể &rarr; Đối soát tồn kho &rarr; Tạo đơn hàng &rarr; Tự động đồng bộ Google Sheets.
+        Chụp hóa đơn/phiếu giao hàng hoặc tải ảnh lên &rarr; AI Vision tự bóc tách thực thể &rarr; Tự động đối soát tồn kho &rarr; Tạo đơn hàng &rarr; Tự động đồng bộ Google Sheets.
       </p>
     </div>
 
-    <!-- Quick Demo Triggers -->
+    <!-- Quick Demo Triggers & Gemini Key Config -->
     <div class="d-flex align-items-center gap-2">
+      <!-- Nút Cấu hình Gemini Key -->
+      <button class="btn btn-sm d-flex align-items-center gap-1.5"
+              [ngClass]="isCustomKeyConfigured ? 'btn-success-subtle text-success border border-success' : 'btn-outline-secondary'"
+              (click)="openApiKeyModal()"
+              title="Cấu hình Google AI Studio API Key">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="7.5" cy="15.5" r="5.5"></circle>
+          <path d="m21 2-9.6 9.6"></path>
+          <path d="m15.5 7.5 3 3L22 7l-3-3"></path>
+        </svg>
+        <span>{{ isCustomKeyConfigured ? 'Gemini Key: Đã lưu' : 'Cài đặt Gemini Key' }}</span>
+      </button>
+
+      <!-- Dropdown Mẫu thử nghiệm -->
       <div class="dropdown">
         <button class="btn btn-outline-secondary btn-sm dropdown-toggle d-flex align-items-center gap-1.5" type="button" data-bs-toggle="dropdown" aria-expanded="false">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -35,11 +49,20 @@
         <ul class="dropdown-menu dropdown-menu-end shadow-sm border-light-subtle">
           <li><h6 class="dropdown-header text-uppercase small fw-bold">Dữ liệu mẫu demo trực tiếp</h6></li>
           <li>
+            <button class="dropdown-item d-flex align-items-center gap-2 py-2" (click)="loadSampleInvoice('shopee')">
+              <span class="badge bg-danger-subtle text-danger">Shopee</span>
+              <div>
+                <div class="fw-medium small">Màn hình Đơn Shopee: Trịnh Mai</div>
+                <div class="text-muted" style="font-size: 0.75rem;">Nệm Foam Sora Việt Nhật (2.270.000 đ)</div>
+              </div>
+            </button>
+          </li>
+          <li>
             <button class="dropdown-item d-flex align-items-center gap-2 py-2" (click)="loadSampleInvoice('fashion')">
               <span class="badge bg-info-subtle text-info">Mẫu 1</span>
               <div>
-                <div class="fw-medium small">Hóa đơn Thời Trang & Phụ kiện</div>
-                <div class="text-muted" style="font-size: 0.75rem;">Áo thun, Quần Jean, Ví da</div>
+                <div class="fw-medium small">Hóa đơn Thời Trang &amp; Phụ kiện</div>
+                <div class="text-muted" style="font-size: 0.75rem;">Lê Hoàng Phúc - Áo thun nam</div>
               </div>
             </button>
           </li>
@@ -48,7 +71,7 @@
               <span class="badge bg-warning-subtle text-warning">Mẫu 2</span>
               <div>
                 <div class="fw-medium small">Hóa đơn Thiết Bị Công Nghệ</div>
-                <div class="text-muted" style="font-size: 0.75rem;">Chuột không dây, Tai nghe Bluetooth</div>
+                <div class="text-muted" style="font-size: 0.75rem;">Nguyễn Minh Tuấn - Laptop Dell, Sách</div>
               </div>
             </button>
           </li>
@@ -88,11 +111,11 @@
         </div>
         <div class="flex-grow-1">
           <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-1">
-            <h5 class="fw-bold text-success mb-0">Đơn Hàng AI Đã Tạo Thành Công & Đã Trừ Kho!</h5>
+            <h5 class="fw-bold text-success mb-0">Đơn Hàng AI Đã Tạo Thành Công &amp; Đã Trừ Kho!</h5>
             <span class="badge bg-success px-2.5 py-1">Mã: {{ successResponse.orderCode }}</span>
           </div>
           <p class="text-muted small mb-3">
-            Hệ thống đã tự động tạo khách hàng, trừ số lượng tồn kho sản phẩm tương ứng và gửi thông điệp vào bảng <code>OutboxMessages</code> để đồng bộ tự động sang Google Sheets.
+            Hệ thống đã tự động lưu khách hàng, trừ số lượng tồn kho sản phẩm tương ứng và gửi thông điệp vào bảng <code>OutboxMessages</code> để đồng bộ tự động sang Google Sheets.
           </p>
           <div class="row g-2 mb-3 bg-light p-2.5 rounded-3 border">
             <div class="col-sm-4">
@@ -130,7 +153,7 @@
                 <line x1="9" y1="3" x2="9" y2="21"></line>
                 <line x1="15" y1="3" x2="15" y2="21"></line>
               </svg>
-              Xem Outbox & Google Sheets
+              Xem Outbox &amp; Google Sheets
             </a>
             <button class="btn btn-primary btn-sm ms-auto" (click)="resetScan()">
               Quét thêm hóa đơn mới
@@ -157,7 +180,7 @@
                   <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
                   <circle cx="12" cy="13" r="4"></circle>
                 </svg>
-                Camera Trực Tiếp (IoT)
+                Camera Trực Tiếp (Webcam / Mobile)
               </button>
             </li>
             <li class="nav-item">
@@ -205,7 +228,7 @@
                 </div>
                 <h6 class="fw-semibold text-white mb-1">Camera Chưa Khởi Động</h6>
                 <p class="text-light-50 small mb-3">
-                  Bật camera trên thiết bị hoặc trạm quét IoT để chụp trực tiếp hóa đơn bán lẻ hoặc phiếu gửi hàng.
+                  Bật camera trên thiết bị để chụp trực tiếp hóa đơn bán lẻ hoặc phiếu gửi hàng.
                 </p>
                 <button class="btn btn-primary btn-sm px-3 d-flex align-items-center gap-1.5" (click)="startCamera()">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -245,7 +268,7 @@
                   <circle cx="12" cy="12" r="10"></circle>
                   <circle cx="12" cy="12" r="3"></circle>
                 </svg>
-                <span class="fw-semibold">Chụp & Quét AI</span>
+                <span class="fw-semibold">Chụp &amp; Quét AI</span>
               </button>
             </div>
           </div>
@@ -298,23 +321,16 @@
             </button>
           </div>
 
-          <!-- Thông tin IoT Station Hardware Tip -->
-          <div class="iot-tip-box mt-3 p-2.5 rounded-2 bg-light border">
+          <!-- Mẹo sử dụng tính năng Quét AI -->
+          <div class="ai-tip-box mt-3 p-2.5 rounded-2 bg-light border">
             <div class="d-flex align-items-start gap-2">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-primary flex-shrink-0 mt-0.5">
-                <rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect>
-                <rect x="9" y="9" width="6" height="6"></rect>
-                <line x1="9" y1="1" x2="9" y2="4"></line>
-                <line x1="15" y1="1" x2="15" y2="4"></line>
-                <line x1="9" y1="20" x2="9" y2="23"></line>
-                <line x1="15" y1="20" x2="15" y2="23"></line>
-                <line x1="20" y1="9" x2="23" y2="9"></line>
-                <line x1="20" y1="14" x2="23" y2="14"></line>
-                <line x1="1" y1="9" x2="4" y2="9"></line>
-                <line x1="1" y1="14" x2="4" y2="14"></line>
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="16" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12.01" y2="8"></line>
               </svg>
               <div style="font-size: 0.775rem;" class="text-muted">
-                <strong class="text-dark">Kịch bản IoT Giai đoạn 2:</strong> Thiết bị ESP32-CAM gắn tại băng chuyền có thể POST trực tiếp ảnh tới <code>/api/iot/orders/scan-and-create</code> để tạo đơn tự động không cần qua giao diện web!
+                <strong class="text-dark">Mẹo tối ưu nhận dạng:</strong> Đặt hóa đơn phẳng, đủ ánh sáng và chụp rõ nét các dòng sản phẩm. AI sẽ tự động phân tích chữ viết, nhận diện khách hàng và đối chiếu với danh mục kho hàng của bạn.
               </div>
             </div>
           </div>
@@ -346,7 +362,7 @@
             </div>
             <h5 class="fw-bold text-dark mb-1">AI Vision Đang Đọc Hóa Đơn...</h5>
             <p class="text-muted small mb-3" style="max-width: 360px;">
-              Hệ thống đang gửi ảnh tới Gemini 2.5 Flash để bóc tách thực thể khách hàng, số điện thoại, sản phẩm và tự động khớp tồn kho.
+              Hệ thống đang gửi ảnh tới Gemini 1.5 Flash Vision AI để bóc tách thực thể khách hàng, số điện thoại, sản phẩm và tự động khớp tồn kho.
             </p>
             <div class="progress w-50" style="height: 6px;">
               <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary w-100"></div>
@@ -373,17 +389,42 @@
               </div>
               <div class="col-4 text-center">
                 <div class="workflow-step-badge mb-1">2</div>
-                <div style="font-size: 0.725rem;" class="fw-medium text-dark">AI bóc tách</div>
+                <div style="font-size: 0.725rem;" class="fw-medium text-dark">AI bóc tách &amp; Khớp kho</div>
               </div>
               <div class="col-4 text-center">
                 <div class="workflow-step-badge mb-1">3</div>
-                <div style="font-size: 0.725rem;" class="fw-medium text-dark">Trừ kho & Sync Sheets</div>
+                <div style="font-size: 0.725rem;" class="fw-medium text-dark">Trừ kho &amp; Sync Sheets</div>
               </div>
             </div>
           </div>
 
           <!-- 3. Kết Quả Quét Được (Cho phép Xem, Sửa và Xác Nhận) -->
           <div *ngIf="!scanning && scannedResult" class="scanned-content flex-grow-1 d-flex flex-column">
+
+            <!-- Cảnh báo chưa có Gemini API Key -->
+            <div *ngIf="!isCustomKeyConfigured" class="alert alert-warning py-2 px-3 mb-3 d-flex align-items-center justify-content-between gap-2 border-warning-subtle rounded-3">
+              <div class="d-flex align-items-center gap-2 small">
+                <span class="fs-5">⚠️</span>
+                <div>
+                  <strong class="text-dark">Đang ở Chế độ Dữ liệu mẫu dự phòng (Mock Fallback).</strong>
+                  <div class="text-muted" style="font-size: 0.75rem;">
+                    Vì chưa cấu hình Gemini API Key nên hệ thống hiển thị dữ liệu mẫu cố định. Để AI quét và đọc <strong>chính xác từng ảnh mới bạn gửi</strong>, hãy nhập API Key miễn phí.
+                  </div>
+                </div>
+              </div>
+              <button class="btn btn-warning btn-sm text-nowrap fw-semibold px-2.5 py-1" (click)="openApiKeyModal()">
+                🔑 Nhập Gemini Key
+              </button>
+            </div>
+
+            <!-- Trạng thái Gemini AI Đang Hoạt Động -->
+            <div *ngIf="isCustomKeyConfigured" class="alert alert-success py-1.5 px-3 mb-3 d-flex align-items-center gap-2 border-success-subtle rounded-3 small">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="text-success flex-shrink-0">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              <span><strong>Gemini 1.5 Flash Vision AI Đang Hoạt Động:</strong> Đã bóc tách trực tiếp từ nội dung hình ảnh thực tế bạn tải lên.</span>
+            </div>
+
             <!-- Thông tin Khách Hàng trích xuất được -->
             <div class="card bg-light-subtle border mb-3">
               <div class="card-body p-3">
@@ -413,14 +454,27 @@
             </div>
 
             <!-- Bảng Danh Sách Sản Phẩm Nhận Diện & Đối Soát Kho -->
+            <div class="d-flex align-items-center justify-content-between mb-1.5">
+              <span class="text-uppercase fw-bold text-muted" style="font-size: 0.6875rem; letter-spacing: 0.05em;">
+                CHI TIẾT MẶT HÀNG &amp; ĐỐI SOÁT TỒN KHO
+              </span>
+              <button class="btn btn-outline-primary btn-sm py-0 px-2 d-inline-flex align-items-center gap-1" style="font-size: 0.75rem;" (click)="addNewItem()">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Thêm món
+              </button>
+            </div>
+
             <div class="table-responsive border rounded-3 mb-3 flex-grow-1 bg-white">
               <table class="table table-hover align-middle mb-0" style="font-size: 0.8125rem;">
                 <thead class="table-light">
                   <tr>
-                    <th scope="col" class="ps-3" style="width: 40%;">Tên món / Khớp kho</th>
-                    <th scope="col" class="text-center" style="width: 15%;">Số lượng</th>
+                    <th scope="col" class="ps-3" style="width: 42%;">Mặt hàng / Khớp kho</th>
+                    <th scope="col" class="text-center" style="width: 14%;">Số lượng</th>
                     <th scope="col" class="text-end" style="width: 20%;">Đơn giá</th>
-                    <th scope="col" class="text-end" style="width: 20%;">Thành tiền</th>
+                    <th scope="col" class="text-end" style="width: 19%;">Thành tiền</th>
                     <th scope="col" class="text-center" style="width: 5%;"></th>
                   </tr>
                 </thead>
@@ -428,13 +482,24 @@
                   <tr *ngFor="let item of scannedResult.items; let idx = index">
                     <td class="ps-3">
                       <div class="fw-semibold text-dark">{{ item.productName }}</div>
-                      <!-- Trạng thái khớp kho -->
-                      <div class="d-flex align-items-center gap-1 mt-0.5">
-                        <span *ngIf="item.isMatched" class="badge bg-success-subtle text-success border border-success-subtle" style="font-size: 0.65rem;">
-                          ✓ Đã khớp kho (Tồn: {{ item.currentStock }})
+                      
+                      <!-- Selector chọn lại sản phẩm nếu muốn đổi -->
+                      <div class="d-flex flex-wrap align-items-center gap-1 mt-1">
+                        <select class="form-select form-select-sm py-0 text-muted" style="font-size: 0.72rem; max-width: 200px;"
+                                [ngModel]="item.matchedProductId"
+                                (ngModelChange)="onProductSelected(item, $event)">
+                          <option [value]="null" disabled>-- Chọn sản phẩm trong kho --</option>
+                          <option *ngFor="let p of storeProducts" [value]="p.id">
+                            {{ p.name }} (Kho: {{ p.stockQuantity }})
+                          </option>
+                        </select>
+
+                        <!-- Trạng thái khớp kho -->
+                        <span *ngIf="item.isMatched && item.quantity <= item.currentStock" class="badge bg-success-subtle text-success border border-success-subtle" style="font-size: 0.65rem;">
+                          ✓ Tồn kho: {{ item.currentStock }}
                         </span>
-                        <span *ngIf="!item.isMatched" class="badge bg-warning-subtle text-warning border border-warning-subtle" style="font-size: 0.65rem;">
-                          ⚡ Tự động gán sản phẩm tương đương
+                        <span *ngIf="item.isMatched && item.quantity > item.currentStock" class="badge bg-danger-subtle text-danger border border-danger-subtle" style="font-size: 0.65rem;">
+                          ⚠️ Vượt kho (Còn: {{ item.currentStock }})
                         </span>
                       </div>
                     </td>
@@ -481,6 +546,50 @@
               </div>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Cấu hình Gemini API Key -->
+  <div *ngIf="showApiKeyModal" class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content shadow-lg border-0">
+        <div class="modal-header border-bottom py-3">
+          <div class="d-flex align-items-center gap-2">
+            <div class="p-2 bg-primary-subtle text-primary rounded-circle">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="7.5" cy="15.5" r="5.5"></circle>
+                <path d="m21 2-9.6 9.6"></path>
+                <path d="m15.5 7.5 3 3L22 7l-3-3"></path>
+              </svg>
+            </div>
+            <div>
+              <h6 class="modal-title fw-bold mb-0">Cấu hình Google Gemini API Key</h6>
+              <span class="text-muted small" style="font-size: 0.75rem;">Kích hoạt Gemini 1.5 Flash Vision đọc mọi loại ảnh hóa đơn</span>
+            </div>
+          </div>
+          <button type="button" class="btn-close" (click)="closeApiKeyModal()"></button>
+        </div>
+        <div class="modal-body py-3">
+          <p class="small text-muted mb-3">
+            Để trích xuất bất kỳ ảnh hóa đơn mới nào bằng Google Gemini 1.5 Flash, bạn có thể lấy API Key miễn phí từ
+            <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener" class="fw-semibold text-primary">Google AI Studio</a>.
+            Key được lưu trên trình duyệt của bạn (LocalStorage) và truyền qua header <code>X-Gemini-Key</code> khi phân tích ảnh.
+          </p>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Gemini API Key (Bắt đầu bằng AIza...):</label>
+            <input type="password" [(ngModel)]="geminiApiKey" class="form-control font-monospace" placeholder="AIzaSy..." />
+            <div class="form-text small">
+              <span *ngIf="isCustomKeyConfigured" class="text-success fw-medium">✓ Đã lưu API key trong trình duyệt.</span>
+              <span *ngIf="!isCustomKeyConfigured" class="text-muted">Chưa có key? Bạn vẫn có thể quét bằng cơ chế Smart Vision Parser tích hợp sẵn.</span>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer border-top py-2.5">
+          <button type="button" class="btn btn-outline-secondary btn-sm" (click)="closeApiKeyModal()">Đóng</button>
+          <button *ngIf="geminiApiKey" type="button" class="btn btn-outline-danger btn-sm" (click)="geminiApiKey = ''; saveApiKey()">Xóa Key</button>
+          <button type="button" class="btn btn-primary btn-sm px-3" (click)="saveApiKey()">Lưu Cấu Hình</button>
         </div>
       </div>
     </div>

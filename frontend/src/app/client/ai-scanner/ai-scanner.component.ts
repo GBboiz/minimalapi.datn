@@ -1,10 +1,13 @@
-import { Component, ElementRef, ViewChild, OnDestroy, inject } from '@angular/core';
+import { Component, ElementRef, ViewChild, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AiScannerService } from '../../core/services/ai-scanner.service';
+import { ProductService } from '../../core/services/product.service';
+import { Product } from '../../core/models/product.model';
 import {
   ScannedInvoice,
+  ScannedInvoiceItem,
   ConfirmScannedOrderRequest,
   ConfirmScannedOrderResponse
 } from '../../core/models/ai-scanner.model';
@@ -15,8 +18,9 @@ import {
   templateUrl: './ai-scanner.component.html',
   styleUrl: './ai-scanner.component.scss'
 })
-export class AiScannerComponent implements OnDestroy {
+export class AiScannerComponent implements OnInit, OnDestroy {
   private scannerService = inject(AiScannerService);
+  private productService = inject(ProductService);
   private router = inject(Router);
 
   @ViewChild('videoElement') videoElement?: ElementRef<HTMLVideoElement>;
@@ -25,6 +29,9 @@ export class AiScannerComponent implements OnDestroy {
 
   // Tab State
   activeTab: 'camera' | 'upload' = 'camera';
+
+  // Danh mục sản phẩm kho thực tế của Store để hỗ trợ đổi món / thêm món
+  storeProducts: Product[] = [];
 
   // Camera state
   isCameraActive = false;
@@ -35,6 +42,11 @@ export class AiScannerComponent implements OnDestroy {
   selectedFile: File | null = null;
   previewImageUrl: string | null = null;
 
+  // Gemini API Key state
+  geminiApiKey = '';
+  showApiKeyModal = false;
+  isCustomKeyConfigured = false;
+
   // Processing state
   scanning = false;
   confirming = false;
@@ -44,8 +56,38 @@ export class AiScannerComponent implements OnDestroy {
   // AI Extracted Result
   scannedResult: ScannedInvoice | null = null;
 
+  ngOnInit(): void {
+    this.geminiApiKey = this.scannerService.getGeminiApiKey();
+    this.isCustomKeyConfigured = !!this.geminiApiKey.trim();
+    this.loadStoreProducts();
+  }
+
   ngOnDestroy(): void {
     this.stopCamera();
+  }
+
+  openApiKeyModal(): void {
+    this.geminiApiKey = this.scannerService.getGeminiApiKey();
+    this.showApiKeyModal = true;
+  }
+
+  saveApiKey(): void {
+    this.scannerService.setGeminiApiKey(this.geminiApiKey);
+    this.isCustomKeyConfigured = !!this.geminiApiKey.trim();
+    this.showApiKeyModal = false;
+  }
+
+  closeApiKeyModal(): void {
+    this.showApiKeyModal = false;
+  }
+
+  loadStoreProducts(): void {
+    this.productService.getAll(1, 100).subscribe({
+      next: (res) => {
+        this.storeProducts = res.items || [];
+      },
+      error: () => {}
+    });
   }
 
   // --- TAB SWITCHING ---
@@ -152,29 +194,29 @@ export class AiScannerComponent implements OnDestroy {
   }
 
   // --- QUICK DEMO SAMPLES ---
-  loadSampleInvoice(type: 'fashion' | 'tech'): void {
+  loadSampleInvoice(type: 'shopee' | 'fashion' | 'tech'): void {
     this.stopCamera();
     this.previewImageUrl = null;
     this.selectedFile = null;
     this.successResponse = null;
 
-    // Trigger AI Scan trực tiếp không cần file thực (sử dụng fallback AI demo từ kho hàng)
-    this.executeScan();
+    // Trigger AI Scan trực tiếp từ server
+    this.executeScan(undefined, type);
   }
 
   // --- CALL BACKEND AI SCAN ---
-  executeScan(file?: File): void {
+  executeScan(file?: File, sampleType?: string): void {
     this.scanning = true;
     this.errorMsg = '';
     this.scannedResult = null;
 
-    this.scannerService.scanInvoice(file).subscribe({
+    this.scannerService.scanInvoice(file, sampleType).subscribe({
       next: (result: any) => {
         // Chuẩn hóa dữ liệu tương thích cả PascalCase và camelCase
         this.scannedResult = {
           customerName: result.customerName ?? result.CustomerName ?? 'Khách Hàng AI',
-          phone: result.phone ?? result.Phone ?? '0908889999',
-          address: result.address ?? result.Address ?? 'Hồ Chí Minh',
+          phone: result.phone ?? result.Phone ?? '0837602899',
+          address: result.address ?? result.Address ?? 'Hà Nội',
           invoiceCode: result.invoiceCode ?? result.InvoiceCode ?? null,
           items: (result.items ?? result.Items ?? []).map((i: any) => ({
             productName: i.productName ?? i.ProductName ?? 'Sản phẩm',
@@ -187,8 +229,8 @@ export class AiScannerComponent implements OnDestroy {
             isMatched: i.isMatched ?? i.IsMatched ?? false
           })),
           totalAmount: result.totalAmount ?? result.TotalAmount ?? 0,
-          aiConfidence: result.aiConfidence ?? result.AiConfidence ?? 98.5,
-          aiSource: result.aiSource ?? result.AiSource ?? 'Gemini 2.5 Flash'
+          aiConfidence: result.aiConfidence ?? result.AiConfidence ?? 98.0,
+          aiSource: result.aiSource ?? result.AiSource ?? 'Gemini 1.5 Flash Vision AI'
         };
         this.scanning = false;
       },
@@ -197,6 +239,38 @@ export class AiScannerComponent implements OnDestroy {
         this.errorMsg = err.error?.error || 'Không thể trích xuất hóa đơn bằng AI. Vui lòng thử lại.';
       }
     });
+  }
+
+  // --- CHỌN LẠI SẢN PHẨM KHỚP TỪ DROPDOWN ---
+  onProductSelected(item: ScannedInvoiceItem, productId: string): void {
+    const prod = this.storeProducts.find(p => p.id === productId);
+    if (prod) {
+      item.matchedProductId = prod.id;
+      item.productName = prod.name;
+      item.matchedProductSku = prod.sku;
+      item.unitPrice = prod.price;
+      item.currentStock = prod.stockQuantity;
+      item.isMatched = true;
+      this.recalculateTotal();
+    }
+  }
+
+  // --- THÊM DÒNG MÓN MỚI THỦ CÔNG ---
+  addNewItem(): void {
+    if (!this.scannedResult) return;
+    const defaultProd = this.storeProducts.length > 0 ? this.storeProducts[0] : null;
+
+    this.scannedResult.items.push({
+      productName: defaultProd ? defaultProd.name : 'Sản phẩm mới',
+      quantity: 1,
+      unitPrice: defaultProd ? defaultProd.price : 0,
+      total: defaultProd ? defaultProd.price : 0,
+      matchedProductId: defaultProd ? defaultProd.id : null,
+      matchedProductSku: defaultProd ? defaultProd.sku : null,
+      currentStock: defaultProd ? defaultProd.stockQuantity : 0,
+      isMatched: defaultProd !== null
+    });
+    this.recalculateTotal();
   }
 
   // --- CONFIRM & CREATE ORDER ---
