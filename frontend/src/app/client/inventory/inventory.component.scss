@@ -1,0 +1,23 @@
+.page-container {
+  padding: 1.5rem 0;
+}
+
+.search-input-group {
+  position: relative;
+
+  .search-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6c757d;
+    pointer-events: none;
+  }
+}
+
+.empty-state {
+  padding: 2rem;
+  .empty-icon {
+    display: block;
+  }
+}

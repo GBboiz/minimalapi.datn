@@ -30,20 +30,26 @@ public sealed class GetProductsHandler(IApplicationDbContext db, ICurrentStore c
             .OrderByDescending(x => x.Product.CreatedAt)
             .Skip((request.Page - 1) * request.PageSize)
             .Take(request.PageSize)
-            .Select(x => new ProductDto(
-                x.Product.Id.Value,
-                x.Product.Name.Value,
-                x.Product.Sku,
-                x.Product.StockQuantity,
-                x.Product.Price.Amount,
-                x.Product.Price.Currency,
-                x.Product.CategoryId.Value,
-                x.CategoryName,
-                x.Product.Description,
-                x.Product.IsActive,
-                x.Product.CreatedAt))
             .ToListAsync(ct);
 
-        return new PagedResult<ProductDto>(items, totalCount, request.Page, request.PageSize);
+        var dtos = items.Select(x => new ProductDto(
+            x.Product.Id.Value,
+            x.Product.Name.Value,
+            x.Product.Sku,
+            x.Product.StockQuantity,
+            x.Product.Price.Amount,
+            x.Product.Price.Currency,
+            x.Product.CategoryId.Value,
+            x.CategoryName,
+            x.Product.Description,
+            x.Product.IsActive,
+            x.Product.CreatedAt,
+            x.Product.GiftProductId?.Value,
+            x.Product.GiftProductName,
+            x.Product.ReservedQuantity,
+            x.Product.ForecastStock))
+            .ToList();
+
+        return new PagedResult<ProductDto>(dtos, totalCount, request.Page, request.PageSize);
     }
 }

@@ -10,6 +10,10 @@ export interface Product {
   description?: string;
   isActive: boolean;
   createdAt: Date;
+  giftProductId?: string | null;
+  giftProductName?: string | null;
+  reservedQuantity?: number;
+  forecastStock?: number;
 }
 
 export interface CreateProductRequest {
@@ -20,6 +24,7 @@ export interface CreateProductRequest {
   currency: string;
   categoryId: string;
   description?: string;
+  giftProductId?: string | null;
 }
 
 export interface UpdateProductRequest {
@@ -31,4 +36,5 @@ export interface UpdateProductRequest {
   categoryId: string;
   description?: string;
   isActive: boolean;
+  giftProductId?: string | null;
 }

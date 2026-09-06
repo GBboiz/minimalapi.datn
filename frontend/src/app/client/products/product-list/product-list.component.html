@@ -47,7 +47,14 @@
       </thead>
       <tbody>
         <tr *ngFor="let product of products">
-          <td>{{ product.name }}</td>
+          <td>
+            <strong>{{ product.name }}</strong>
+            <div *ngIf="product.giftProductName" class="mt-1">
+              <span class="badge bg-warning text-dark">
+                <i class="bi bi-gift-fill me-1"></i>Tặng: {{ product.giftProductName }}
+              </span>
+            </div>
+          </td>
           <td><code>{{ product.sku }}</code></td>
           <td>{{ product.stockQuantity }}</td>
           <td>{{ product.price | number:'1.0-0' }} {{ product.currency }}</td>

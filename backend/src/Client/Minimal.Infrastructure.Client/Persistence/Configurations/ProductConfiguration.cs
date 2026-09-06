@@ -27,6 +27,7 @@ public sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.Property(p => p.Sku).HasColumnName("sku").HasMaxLength(64).IsRequired();
         builder.HasIndex(p => new { p.StoreId, p.Sku }).IsUnique();
         builder.Property(p => p.StockQuantity).HasColumnName("stock_quantity").HasDefaultValue(0);
+        builder.Property(p => p.ReservedQuantity).HasColumnName("reserved_quantity").HasDefaultValue(0);
 
         // ProductName — ComplexProperty (Value Object owned)
         builder.ComplexProperty(p => p.Name, nameBuilder =>
@@ -62,13 +63,26 @@ public sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.Property(p => p.IsActive)
             .HasColumnName("is_active");
 
+        builder.Property(p => p.GiftProductId)
+            .HasColumnName("gift_product_id")
+            .HasConversion(
+                id => id.HasValue ? id.Value.Value : (Guid?)null,
+                value => value.HasValue ? new ProductId(value.Value) : (ProductId?)null)
+            .IsRequired(false);
+
+        builder.Property(p => p.GiftProductName)
+            .HasColumnName("gift_product_name")
+            .HasMaxLength(200)
+            .IsRequired(false);
+
         builder.Property(p => p.CreatedAt)
             .HasColumnName("created_at");
 
         builder.Property(p => p.UpdatedAt)
             .HasColumnName("updated_at");
 
-        // Ignore DomainEvents — không persist vào DB
+        // Ignore DomainEvents & ForecastStock — không persist vào DB
         builder.Ignore(p => p.DomainEvents);
+        builder.Ignore(p => p.ForecastStock);
     }
 }

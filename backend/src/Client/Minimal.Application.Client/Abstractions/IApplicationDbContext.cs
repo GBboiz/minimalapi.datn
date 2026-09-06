@@ -14,4 +14,5 @@ public interface IApplicationDbContext
     IQueryable<Order> Orders { get; }
     IQueryable<GoogleSheetConnection> GoogleSheetConnections { get; }
     IQueryable<OutboxMessage> OutboxMessages { get; }
+    IQueryable<Promotion> Promotions { get; }
 }

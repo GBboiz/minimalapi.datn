@@ -16,4 +16,6 @@ public record CreateProductCommand(
     /// <summary>Mã danh mục.</summary>
     Guid CategoryId,
     /// <summary>Mô tả sản phẩm (không bắt buộc).</summary>
-    string? Description) : IRequest<Result<Guid>>;
+    string? Description,
+    /// <summary>Mã sản phẩm quà tặng kèm (không bắt buộc).</summary>
+    Guid? GiftProductId = null) : IRequest<Result<Guid>>;

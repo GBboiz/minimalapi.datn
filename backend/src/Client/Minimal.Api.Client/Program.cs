@@ -185,6 +185,8 @@ app.MapProductEndpoints();
 app.MapCategoryEndpoints();
 app.MapCustomerEndpoints();
 app.MapOrderEndpoints();
+app.MapPromotionEndpoints();
+app.MapInventoryEndpoints();
 app.MapAuthEndpoints();
 app.MapGoogleSheetEndpoints();
 app.MapDashboardEndpoints();

@@ -6,6 +6,7 @@ export interface OrderItem {
   currency: string;
   quantity: number;
   totalPrice: number;
+  isGift?: boolean;
 }
 
 export interface OrderSummary {
@@ -15,6 +16,9 @@ export interface OrderSummary {
   customerPhone: string;
   code: string;
   status: string;
+  subTotal?: number;
+  discountPercent?: number;
+  discountAmount?: number;
   totalAmount: number;
   currency: string;
   totalItems: number;
@@ -29,6 +33,9 @@ export interface OrderDetail {
   customerAddress?: string;
   code: string;
   status: string;
+  subTotal?: number;
+  discountPercent?: number;
+  discountAmount?: number;
   totalAmount: number;
   currency: string;
   createdAt: string;
@@ -38,9 +45,14 @@ export interface OrderDetail {
 export interface CreateOrderItemRequest {
   productId: string;
   quantity: number;
+  isGift?: boolean;
 }
 
 export interface CreateOrderRequest {
   customerId: string;
   items: CreateOrderItemRequest[];
+  discountPercent?: number;
+  discountAmount?: number;
+  promotionCode?: string;
 }
+

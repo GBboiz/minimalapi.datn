@@ -11,11 +11,17 @@ import { OrderCreateComponent } from './orders/order-create/order-create.compone
 import { OrderDetailComponent } from './orders/order-detail/order-detail.component';
 import { GoogleSheetsDashboardComponent } from './google-sheets/google-sheets-dashboard/google-sheets-dashboard.component';
 import { AiScannerComponent } from './ai-scanner/ai-scanner.component';
+import { PromotionsComponent } from './promotions/promotions.component';
+import { GiftsComponent } from './gifts/gifts.component';
+import { InventoryComponent } from './inventory/inventory.component';
 
 export const CLIENT_ROUTES: Routes = [
   { path: '', component: HomeComponent },
   { path: 'dashboard', component: HomeComponent },
-  { path: 'ai-scanner', component: AiScannerComponent },
+  { path: 'sales', component: OrderCreateComponent },
+  { path: 'gifts', component: GiftsComponent },
+  { path: 'promotions', component: PromotionsComponent },
+  { path: 'inventory', component: InventoryComponent },
   { path: 'products', component: ProductListComponent },
   { path: 'products/create', component: ProductFormComponent },
   { path: 'products/edit/:id', component: ProductFormComponent },
@@ -28,5 +34,6 @@ export const CLIENT_ROUTES: Routes = [
   { path: 'orders', component: OrderListComponent },
   { path: 'orders/create', component: OrderCreateComponent },
   { path: 'orders/:id', component: OrderDetailComponent },
+  { path: 'ai-scanner', component: AiScannerComponent },
   { path: 'google-sheets', component: GoogleSheetsDashboardComponent }
 ];

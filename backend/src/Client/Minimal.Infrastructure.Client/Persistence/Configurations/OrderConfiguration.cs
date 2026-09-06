@@ -34,6 +34,37 @@ public sealed class OrderConfiguration : IEntityTypeConfiguration<Order>
             .HasMaxLength(30)
             .IsRequired();
 
+        builder.ComplexProperty(o => o.SubTotal, moneyBuilder =>
+        {
+            moneyBuilder.Property(m => m.Amount)
+                .HasColumnName("sub_total_amount")
+                .HasColumnType("decimal(18,2)")
+                .IsRequired();
+
+            moneyBuilder.Property(m => m.Currency)
+                .HasColumnName("sub_total_currency")
+                .HasMaxLength(3)
+                .IsRequired();
+        });
+
+        builder.Property(o => o.DiscountPercent)
+            .HasColumnName("discount_percent")
+            .HasColumnType("decimal(5,2)")
+            .HasDefaultValue(0m);
+
+        builder.ComplexProperty(o => o.DiscountAmount, moneyBuilder =>
+        {
+            moneyBuilder.Property(m => m.Amount)
+                .HasColumnName("discount_amount")
+                .HasColumnType("decimal(18,2)")
+                .IsRequired();
+
+            moneyBuilder.Property(m => m.Currency)
+                .HasColumnName("discount_currency")
+                .HasMaxLength(3)
+                .IsRequired();
+        });
+
         builder.ComplexProperty(o => o.TotalAmount, moneyBuilder =>
         {
             moneyBuilder.Property(m => m.Amount)

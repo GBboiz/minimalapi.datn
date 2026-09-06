@@ -7,7 +7,8 @@ public record OrderItemDto(
     decimal UnitPrice,
     string Currency,
     int Quantity,
-    decimal TotalPrice);
+    decimal TotalPrice,
+    bool IsGift = false);
 
 public record OrderDto(
     Guid Id,
@@ -17,6 +18,9 @@ public record OrderDto(
     string? CustomerAddress,
     string Code,
     string Status,
+    decimal SubTotal,
+    decimal DiscountPercent,
+    decimal DiscountAmount,
     decimal TotalAmount,
     string Currency,
     DateTime CreatedAt,
@@ -29,6 +33,9 @@ public record OrderSummaryDto(
     string CustomerPhone,
     string Code,
     string Status,
+    decimal SubTotal,
+    decimal DiscountPercent,
+    decimal DiscountAmount,
     decimal TotalAmount,
     string Currency,
     int TotalItems,
