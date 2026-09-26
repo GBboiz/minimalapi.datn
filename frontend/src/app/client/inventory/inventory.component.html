@@ -1,12 +1,9 @@
-<div class="page-container">
+<div class="inventory-page-container">
   <!-- Page Header -->
-  <div class="page-header d-flex justify-content-between align-items-center mb-4">
+  <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mb-4">
     <div>
-      <h1 class="page-title d-flex align-items-center gap-2 m-0">
-        <span class="header-icon">📦</span>
-        Quản lý Tồn kho
-      </h1>
-      <p class="text-muted m-0 mt-1">Phân biệt rõ <strong>Tồn kho thực tế</strong> (vật lý) và <strong>Tồn kho dự báo</strong> (khả dụng sau khi giữ chỗ đơn chờ duyệt)</p>
+      <h2 class="page-title mb-1">Quản lý Tồn kho</h2>
+      <p class="page-subtitle text-muted mb-0">Phân biệt rõ <strong>Tồn kho thực tế</strong> (vật lý) và <strong>Tồn kho dự báo</strong> (khả dụng sau khi trừ đơn chờ duyệt)</p>
     </div>
   </div>
 
@@ -19,152 +16,122 @@
     <span>{{ successMessage }}</span>
   </div>
 
-  <!-- KPI Summary Cards -->
-  <div class="row g-3 mb-4" *ngIf="summary">
-    <!-- Tổng sản phẩm -->
-    <div class="col-md-3 col-sm-6">
-      <div class="card h-100 border shadow-sm">
-        <div class="card-body">
-          <div class="d-flex align-items-center justify-content-between">
-            <span class="text-muted small fw-medium">Tổng mặt hàng</span>
-            <span class="badge bg-light text-muted border">Mã SKU</span>
-          </div>
-          <div class="fs-3 fw-bold text-dark mt-2">{{ summary.totalProducts }}</div>
-          <div class="text-muted small mt-1">Sản phẩm đang quản lý</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Tồn kho thực tế (Actual) -->
-    <div class="col-md-3 col-sm-6">
-      <div class="card h-100 border shadow-sm border-primary-subtle">
-        <div class="card-body">
-          <div class="d-flex align-items-center justify-content-between">
-            <span class="text-primary small fw-semibold">Tồn kho thực tế</span>
-            <span class="badge bg-primary-subtle text-primary border border-primary-subtle">Hàng vật lý</span>
-          </div>
-          <div class="fs-3 fw-bold text-primary mt-2">{{ summary.totalActualStock | number }}</div>
-          <div class="text-muted small mt-1">Số lượng thực tế trong kho</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Giữ chỗ (Pending) -->
-    <div class="col-md-3 col-sm-6">
-      <div class="card h-100 border shadow-sm border-warning-subtle">
-        <div class="card-body">
-          <div class="d-flex align-items-center justify-content-between">
-            <span class="text-warning-emphasis small fw-semibold">Đang giữ chỗ (Pending)</span>
-            <span class="badge bg-warning-subtle text-warning border border-warning-subtle">Chờ duyệt</span>
-          </div>
-          <div class="fs-3 fw-bold text-warning-emphasis mt-2">{{ summary.totalReservedStock | number }}</div>
-          <div class="text-muted small mt-1">Đơn hàng đang chờ xác nhận</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Tồn kho dự báo (Forecast) -->
-    <div class="col-md-3 col-sm-6">
-      <div class="card h-100 border shadow-sm border-success-subtle">
-        <div class="card-body">
-          <div class="d-flex align-items-center justify-content-between">
-            <span class="text-success small fw-semibold">Tồn kho dự báo</span>
-            <span class="badge bg-success-subtle text-success border border-success-subtle">Khả dụng</span>
-          </div>
-          <div class="fs-3 fw-bold text-success mt-2">{{ summary.totalForecastStock | number }}</div>
-          <div class="text-muted small mt-1">Sẵn sàng để tiếp tục bán</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Search & Filter Card -->
-  <div class="card mb-4 filter-card">
-    <div class="card-body">
-      <div class="row g-3 align-items-center">
-        <div class="col-md-7">
-          <div class="search-input-group">
-            <span class="search-icon">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="11" cy="11" r="8"></circle>
-                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-              </svg>
-            </span>
-            <input
-              type="text"
-              class="form-control ps-5"
-              placeholder="Tìm kiếm sản phẩm theo tên hoặc mã SKU..."
-              [(ngModel)]="searchTerm"
-              (keyup.enter)="onSearch()"
-            />
-          </div>
-        </div>
-        <div class="col-md-5 d-flex gap-2 justify-content-md-end">
-          <button
-            class="btn"
-            [ngClass]="lowStockOnly ? 'btn-danger' : 'btn-outline-danger'"
-            (click)="toggleLowStockFilter()">
-            <span>⚠️</span> Sắp hết hàng (&le; 5)
-            <span class="badge bg-white text-danger ms-1" *ngIf="summary?.lowStockAlertCount">{{ summary?.lowStockAlertCount }}</span>
-          </button>
-          <button class="btn btn-outline-secondary" (click)="loadInventory()">
-            Làm mới
+  <!-- Bộ lọc (Filters) -->
+  <div class="filter-card mb-3 p-3 bg-white border rounded-3">
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3">
+      <!-- Filter 1 (Bên trái): Tìm kiếm theo tên hoặc SKU -->
+      <div class="filter-search-col">
+        <div class="search-input-wrapper">
+          <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input
+            type="text"
+            class="form-control search-input"
+            placeholder="Tìm theo tên sản phẩm hoặc mã SKU..."
+            [(ngModel)]="searchTerm"
+            (keyup.enter)="onSearch()">
+          <button *ngIf="searchTerm" type="button" class="btn btn-clear-search" (click)="searchTerm = ''; onSearch()" title="Xóa tìm kiếm">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
           </button>
         </div>
+      </div>
+
+      <!-- Filter 2 (Ngoài cùng bên phải): Nút lọc Sắp hết hàng & Nút làm mới -->
+      <div class="filter-actions-col d-flex align-items-center gap-2 flex-wrap justify-content-lg-end">
+        <button
+          type="button"
+          class="btn btn-filter-alert d-inline-flex align-items-center gap-1.5"
+          [ngClass]="lowStockOnly ? 'btn-danger' : 'btn-outline-danger'"
+          (click)="toggleLowStockFilter()">
+          <span>⚠️</span> Sắp hết hàng (&le; 5)
+          <span class="badge ms-1" [ngClass]="lowStockOnly ? 'bg-white text-danger' : 'bg-danger text-white'" *ngIf="summary?.lowStockAlertCount">
+            {{ summary?.lowStockAlertCount }}
+          </span>
+        </button>
+
+        <!-- Nút Refresh / Làm mới bộ lọc -->
+        <button
+          type="button"
+          class="btn btn-refresh d-inline-flex align-items-center gap-1.5"
+          (click)="resetFilters()"
+          title="Làm mới dữ liệu tồn kho">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" [class.spin-icon]="loading">
+            <path d="M23 4v6h-6"></path>
+            <path d="M1 20v-6h6"></path>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+          </svg>
+          <span> Làm mới</span>
+        </button>
       </div>
     </div>
   </div>
 
   <!-- Loading State -->
-  <div class="text-center py-5" *ngIf="loading">
+  <div class="text-center my-5 py-4" *ngIf="loading">
     <div class="spinner-border text-primary" role="status">
       <span class="visually-hidden">Đang tải...</span>
     </div>
-    <p class="text-muted mt-2">Đang tải dữ liệu tồn kho...</p>
+    <div class="text-muted small mt-2">Đang tải dữ liệu tồn kho...</div>
   </div>
 
   <!-- Inventory Table Card -->
-  <div class="card table-card" *ngIf="!loading">
+  <div class="card table-card border rounded-3" *ngIf="!loading">
     <div class="table-responsive">
       <table class="table table-hover align-middle mb-0">
-        <thead class="table-light">
+        <thead>
           <tr>
-            <th class="text-center" style="width: 50px">STT</th>
-            <th>Mã SKU</th>
-            <th>Sản phẩm</th>
-            <th>Danh mục</th>
-            <th>Giá bán</th>
-            <th class="text-center">Tồn thực tế</th>
-            <th class="text-center">Chờ duyệt (Pending)</th>
-            <th class="text-center">Tồn dự báo</th>
-            <th class="text-center">Trạng thái kho</th>
-            <th class="text-end" style="width: 140px">Thao tác</th>
+            <th scope="col" class="text-center" style="width: 60px">STT</th>
+            <th scope="col" style="min-width: 120px">Mã SKU</th>
+            <th scope="col" style="min-width: 220px">Sản phẩm</th>
+            <th scope="col" style="min-width: 140px">Danh mục</th>
+            <th scope="col" class="text-end" style="min-width: 130px">Giá bán</th>
+            <th scope="col" class="text-center" style="min-width: 110px">Tồn thực tế</th>
+            <th scope="col" class="text-center" style="min-width: 130px">Chờ duyệt (Pending)</th>
+            <th scope="col" class="text-center" style="min-width: 110px">Tồn dự báo</th>
+            <th scope="col" class="text-center" style="min-width: 120px">Trạng thái kho</th>
+            <th scope="col" class="text-end" style="width: 80px">Thao tác</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let item of summary?.items; let i = index">
-            <td class="text-center text-muted">{{ i + 1 }}</td>
+            <!-- STT -->
+            <td class="text-center text-muted fw-medium">{{ i + 1 }}</td>
+
+            <!-- SKU -->
             <td>
               <span class="badge bg-light text-dark font-monospace border">{{ item.sku }}</span>
             </td>
+
+            <!-- Sản phẩm -->
             <td>
               <div class="fw-semibold text-dark">{{ item.name }}</div>
-              <div *ngIf="item.giftProductName" class="text-warning-emphasis small mt-0.5">
+              <div *ngIf="item.giftProductName" class="gift-tag mt-1">
                 🎁 Tặng: {{ item.giftProductName }}
               </div>
             </td>
+
+            <!-- Danh mục -->
             <td>
               <span class="text-muted small">{{ item.categoryName }}</span>
             </td>
-            <td class="fw-medium text-secondary">
+
+            <!-- Giá -->
+            <td class="text-end fw-semibold text-primary">
               {{ item.price | number:'1.0-0' }} {{ item.currency }}
             </td>
+
             <!-- Tồn thực tế -->
             <td class="text-center">
               <span class="badge bg-primary-subtle text-primary font-monospace fs-6 px-2 py-1 border border-primary-subtle">
                 {{ item.stockQuantity }}
               </span>
             </td>
+
             <!-- Giữ chỗ (Pending) -->
             <td class="text-center">
               <span *ngIf="item.reservedQuantity > 0" class="badge bg-warning-subtle text-warning-emphasis font-monospace fs-6 px-2 py-1 border border-warning-subtle">
@@ -172,6 +139,7 @@
               </span>
               <span *ngIf="item.reservedQuantity === 0" class="text-muted small">—</span>
             </td>
+
             <!-- Tồn dự báo -->
             <td class="text-center">
               <span
@@ -180,23 +148,45 @@
                 {{ item.forecastStock }}
               </span>
             </td>
+
             <!-- Trạng thái kho -->
             <td class="text-center">
               <span *ngIf="item.forecastStock === 0" class="badge bg-danger text-white">Hết hàng</span>
               <span *ngIf="item.forecastStock > 0 && item.forecastStock <= 5" class="badge bg-warning text-dark">Sắp hết</span>
               <span *ngIf="item.forecastStock > 5" class="badge bg-success-subtle text-success">Dồi dào</span>
             </td>
-            <!-- Thao tác -->
+
+            <!-- Thao tác: 3 chấm dropdown -->
             <td class="text-end">
-              <button
-                class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1"
-                (click)="openAdjustModal(item)">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                </svg>
-                Điều chỉnh
-              </button>
+              <div class="action-dropdown" [class.dropup]="i >= (summary?.items?.length || 0) - 2 && (summary?.items?.length || 0) > 2" (click)="$event.stopPropagation()">
+                <button
+                  type="button"
+                  class="btn-action-trigger"
+                  [class.active]="activeDropdownItemId === item.sku"
+                  (click)="toggleDropdown(item.sku, $event)"
+                  title="Thao tác"
+                  aria-label="Thao tác">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                    <circle cx="12" cy="5" r="2"></circle>
+                    <circle cx="12" cy="12" r="2"></circle>
+                    <circle cx="12" cy="19" r="2"></circle>
+                  </svg>
+                </button>
+
+                <!-- Dropdown Menu -->
+                <div class="action-menu shadow-lg border rounded-3 bg-white" *ngIf="activeDropdownItemId === item.sku">
+                  <button
+                    type="button"
+                    class="action-item"
+                    (click)="openAdjustModal(item)">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                    <span>Điều chỉnh kho</span>
+                  </button>
+                </div>
+              </div>
             </td>
           </tr>
 
@@ -204,7 +194,6 @@
           <tr *ngIf="!summary?.items?.length">
             <td colspan="10" class="text-center py-5 text-muted">
               <div class="empty-state">
-                <span class="empty-icon fs-1">📦</span>
                 <p class="mt-2 mb-0">Không có sản phẩm nào phù hợp.</p>
               </div>
             </td>
@@ -220,9 +209,7 @@
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content shadow-lg border-0">
         <div class="modal-header border-bottom">
-          <h5 class="modal-title d-flex align-items-center gap-2">
-            <span>📦</span> Điều chỉnh số lượng tồn kho
-          </h5>
+          <h5 class="modal-title">Điều chỉnh số lượng tồn kho</h5>
           <button type="button" class="btn-close" (click)="closeAdjustModal()"></button>
         </div>
         <div class="modal-body p-4" *ngIf="selectedItem">

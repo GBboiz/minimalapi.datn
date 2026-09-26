@@ -1,96 +1,233 @@
-<div class="container mt-4">
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <h2>Danh sách sản phẩm</h2>
-    <a routerLink="/products/create" class="btn btn-primary">
-      <i class="bi bi-plus-circle"></i> Thêm sản phẩm
-    </a>
+<div class="product-page-container">
+  <!-- Header: Tiêu đề & Nút Thêm sản phẩm -->
+  <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mb-4">
+    <div>
+      <h2 class="page-title mb-1">Quản lý Sản phẩm</h2>
+      <p class="page-subtitle text-muted mb-0">Xem thông tin chi tiết, quản lý giá, tồn kho và trạng thái kinh doanh của sản phẩm</p>
+    </div>
+    <div>
+      <a routerLink="/products/create" class="btn btn-primary d-inline-flex align-items-center gap-2 px-3 py-2">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        <span>Thêm sản phẩm</span>
+      </a>
+    </div>
   </div>
 
-  <!-- Search -->
-  <div class="row mb-3">
-    <div class="col-md-6">
-      <div class="input-group">
-        <input
-          type="text"
-          class="form-control"
-          placeholder="Tìm kiếm theo tên, SKU..."
-          [(ngModel)]="searchTerm"
-          (keyup.enter)="onSearch()">
-        <button class="btn btn-outline-secondary" type="button" (click)="onSearch()">
-          Tìm kiếm
+  <!-- Thông báo thành công -->
+  <div class="alert alert-success d-flex align-items-center gap-2 mb-4" *ngIf="successMessage">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+      <polyline points="22 4 12 14.01 9 11.01"></polyline>
+    </svg>
+    <span>{{ successMessage }}</span>
+  </div>
+
+  <!-- Bộ lọc (Filters) -->
+  <div class="filter-card mb-3 p-3 bg-white border rounded-3">
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3">
+      <!-- Filter 1 (Bên trái): Tìm kiếm theo tên hoặc SKU -->
+      <div class="filter-search-col">
+        <div class="search-input-wrapper">
+          <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input
+            type="text"
+            class="form-control search-input"
+            placeholder="Tìm theo tên sản phẩm hoặc mã SKU..."
+            [(ngModel)]="searchTerm"
+            (keyup.enter)="onSearch()">
+          <button *ngIf="searchTerm" type="button" class="btn btn-clear-search" (click)="searchTerm = ''; onSearch()" title="Xóa tìm kiếm">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Filter 2 (Ngoài cùng bên phải): Trạng thái & Nút làm mới -->
+      <div class="filter-actions-col d-flex align-items-center gap-2 flex-wrap justify-content-lg-end">
+        <div class="filter-item-status">
+          <select class="form-select filter-select" [(ngModel)]="filterStatus">
+            <option value="ALL">Tất cả trạng thái</option>
+            <option value="ACTIVE">Hoạt động</option>
+            <option value="INACTIVE">Ngưng bán</option>
+          </select>
+        </div>
+
+        <!-- Nút Refresh / Làm mới bộ lọc -->
+        <button
+          type="button"
+          class="btn btn-refresh d-inline-flex align-items-center gap-1.5"
+          (click)="resetFilters()"
+          title="Làm mới bộ lọc về mặc định">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" [class.spin-icon]="loading">
+            <path d="M23 4v6h-6"></path>
+            <path d="M1 20v-6h6"></path>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+          </svg>
+          <span> Làm mới</span>
         </button>
       </div>
     </div>
   </div>
 
-  <!-- Loading -->
-  <div *ngIf="loading" class="text-center my-4">
-    <div class="spinner-border" role="status">
+  <!-- Loading State -->
+  <div class="text-center my-5 py-4" *ngIf="loading">
+    <div class="spinner-border text-primary" role="status">
       <span class="visually-hidden">Đang tải...</span>
+    </div>
+    <div class="text-muted small mt-2">Đang tải danh sách sản phẩm...</div>
+  </div>
+
+  <!-- Table Card -->
+  <div class="card table-card border rounded-3" *ngIf="!loading">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead>
+          <tr>
+            <th scope="col" class="text-center" style="width: 60px">STT</th>
+            <th scope="col" style="min-width: 220px">Tên sản phẩm</th>
+            <th scope="col" style="min-width: 120px">Mã SKU</th>
+            <th scope="col" class="text-center" style="min-width: 90px">Tồn kho</th>
+            <th scope="col" class="text-end" style="min-width: 130px">Giá niêm yết</th>
+            <th scope="col" style="min-width: 140px">Danh mục</th>
+            <th scope="col" class="text-center" style="min-width: 110px">Trạng thái</th>
+            <th scope="col" style="min-width: 110px">Ngày tạo</th>
+            <th scope="col" class="text-end" style="width: 80px">Thao tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let product of filteredProducts; let i = index">
+            <!-- STT -->
+            <td class="text-center text-muted fw-medium">{{ (currentPage - 1) * pageSize + i + 1 }}</td>
+
+            <!-- Tên sản phẩm -->
+            <td>
+              <div class="fw-semibold text-dark">{{ product.name }}</div>
+              <div *ngIf="product.giftProductName" class="mt-1">
+                <span class="gift-tag">
+                  🎁 Tặng: {{ product.giftProductName }}
+                </span>
+              </div>
+            </td>
+
+            <!-- SKU -->
+            <td>
+              <span class="badge bg-light text-dark font-monospace border">{{ product.sku }}</span>
+            </td>
+
+            <!-- Tồn kho -->
+            <td class="text-center">
+              <span class="badge" [ngClass]="product.stockQuantity > 5 ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-danger-subtle text-danger border border-danger-subtle'">
+                {{ product.stockQuantity }}
+              </span>
+            </td>
+
+            <!-- Giá -->
+            <td class="text-end text-nowrap">
+              <span class="fw-semibold text-primary fs-6">{{ product.price | number:'1.0-0' }} {{ product.currency }}</span>
+            </td>
+
+            <!-- Danh mục -->
+            <td>
+              <span class="text-muted small">{{ product.categoryName || '—' }}</span>
+            </td>
+
+            <!-- Trạng thái -->
+            <td class="text-center">
+              <span class="badge" [ngClass]="product.isActive ? 'bg-success text-white' : 'bg-secondary text-white'">
+                {{ product.isActive ? 'Hoạt động' : 'Ngưng bán' }}
+              </span>
+            </td>
+
+            <!-- Ngày tạo -->
+            <td class="text-muted small">
+              {{ product.createdAt | date:'dd/MM/yyyy' }}
+            </td>
+
+            <!-- Thao tác: 3 chấm dropdown -->
+            <td class="text-end">
+              <div class="action-dropdown" [class.dropup]="i >= filteredProducts.length - 2 && filteredProducts.length > 2" (click)="$event.stopPropagation()">
+                <button
+                  type="button"
+                  class="btn-action-trigger"
+                  [class.active]="activeDropdownProductId === product.id"
+                  (click)="toggleDropdown(product.id, $event)"
+                  title="Thao tác"
+                  aria-label="Thao tác">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                    <circle cx="12" cy="5" r="2"></circle>
+                    <circle cx="12" cy="12" r="2"></circle>
+                    <circle cx="12" cy="19" r="2"></circle>
+                  </svg>
+                </button>
+
+                <!-- Dropdown Menu -->
+                <div class="action-menu shadow-lg border rounded-3 bg-white" *ngIf="activeDropdownProductId === product.id">
+                  <!-- Sửa -->
+                  <a
+                    [routerLink]="['/products/edit', product.id]"
+                    class="action-item"
+                    (click)="closeDropdown()">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                    <span>Sửa</span>
+                  </a>
+
+                  <div class="action-divider"></div>
+
+                  <!-- Xóa -->
+                  <button
+                    type="button"
+                    class="action-item action-cancel"
+                    (click)="onDelete(product.id, product.name)">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="3 6 5 6 21 6"></polyline>
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                      <line x1="10" y1="11" x2="10" y2="17"></line>
+                      <line x1="14" y1="11" x2="14" y2="17"></line>
+                    </svg>
+                    <span>Xóa</span>
+                  </button>
+                </div>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Empty State -->
+          <tr *ngIf="filteredProducts.length === 0">
+            <td colspan="9" class="text-center py-5 text-muted">
+              <div class="empty-state">
+                <p class="mt-2 mb-0">Không tìm thấy sản phẩm nào phù hợp.</p>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </div>
 
-  <!-- Table -->
-  <div *ngIf="!loading && products.length > 0" class="table-responsive">
-    <table class="table table-striped table-hover">
-      <thead>
-        <tr>
-          <th>Tên sản phẩm</th>
-          <th>SKU</th>
-          <th>Tồn kho</th>
-          <th>Giá</th>
-          <th>Danh mục</th>
-          <th>Trạng thái</th>
-          <th>Ngày tạo</th>
-          <th>Thao tác</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let product of products">
-          <td>
-            <strong>{{ product.name }}</strong>
-            <div *ngIf="product.giftProductName" class="mt-1">
-              <span class="badge bg-warning text-dark">
-                <i class="bi bi-gift-fill me-1"></i>Tặng: {{ product.giftProductName }}
-              </span>
-            </div>
-          </td>
-          <td><code>{{ product.sku }}</code></td>
-          <td>{{ product.stockQuantity }}</td>
-          <td>{{ product.price | number:'1.0-0' }} {{ product.currency }}</td>
-          <td>{{ product.categoryName }}</td>
-          <td>
-            <span class="badge" [class.bg-success]="product.isActive" [class.bg-secondary]="!product.isActive">
-              {{ product.isActive ? 'Hoạt động' : 'Ngưng' }}
-            </span>
-          </td>
-          <td>{{ product.createdAt | date:'dd/MM/yyyy' }}</td>
-          <td>
-            <a [routerLink]="['/products/edit', product.id]" class="btn btn-sm btn-warning me-1">Sửa</a>
-            <button (click)="onDelete(product.id, product.name)" class="btn btn-sm btn-danger">Xóa</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-  <!-- No data -->
-  <div *ngIf="!loading && products.length === 0" class="alert alert-info">
-    Không có sản phẩm nào
-  </div>
-
   <!-- Pagination -->
-  <nav *ngIf="pagedResult && pagedResult.totalPages > 1" aria-label="Page navigation">
-    <ul class="pagination justify-content-center">
+  <div class="d-flex justify-content-between align-items-center mt-3" *ngIf="pagedResult && pagedResult.totalPages > 1">
+    <div class="text-muted small">
+      Hiển thị trang {{ pagedResult.page }} / {{ pagedResult.totalPages }} (Tổng {{ pagedResult.totalCount }} sản phẩm)
+    </div>
+    <ul class="pagination mb-0">
       <li class="page-item" [class.disabled]="!pagedResult.hasPrevious">
         <button class="page-link" (click)="onPageChange(currentPage - 1)" [disabled]="!pagedResult.hasPrevious">
           Trước
         </button>
       </li>
       <li class="page-item active">
-        <span class="page-link">
-          Trang {{ pagedResult.page }} / {{ pagedResult.totalPages }}
-        </span>
+        <span class="page-link">{{ pagedResult.page }}</span>
       </li>
       <li class="page-item" [class.disabled]="!pagedResult.hasNext">
         <button class="page-link" (click)="onPageChange(currentPage + 1)" [disabled]="!pagedResult.hasNext">
@@ -98,5 +235,5 @@
         </button>
       </li>
     </ul>
-  </nav>
+  </div>
 </div>

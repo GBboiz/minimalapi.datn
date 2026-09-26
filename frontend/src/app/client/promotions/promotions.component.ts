@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PromotionService } from '../../core/services/promotion.service';
@@ -19,6 +19,10 @@ export class PromotionsComponent implements OnInit {
   saving = false;
   searchTerm = '';
   filterType = 'ALL'; // ALL, 1 (Percentage), 2 (FixedAmount)
+  filterStatus = 'ALL'; // ALL, ACTIVE, INACTIVE
+
+  // Dropdown action (3 chấm)
+  activeDropdownPromotionId: string | null = null;
 
   // Presets gợi ý
   presets = [
@@ -104,11 +108,40 @@ export class PromotionsComponent implements OnInit {
       if (!matchSearch) return false;
 
       if (this.filterType !== 'ALL') {
-        return p.discountType.toString() === this.filterType;
+        if (p.discountType.toString() !== this.filterType) return false;
       }
+
+      if (this.filterStatus === 'ACTIVE') return p.isActive;
+      if (this.filterStatus === 'INACTIVE') return !p.isActive;
 
       return true;
     });
+  }
+
+  resetFilters(): void {
+    this.searchTerm = '';
+    this.filterType = 'ALL';
+    this.filterStatus = 'ALL';
+    this.loadPromotions();
+  }
+
+  toggleDropdown(id: string, event: Event): void {
+    event.stopPropagation();
+    this.activeDropdownPromotionId = this.activeDropdownPromotionId === id ? null : id;
+  }
+
+  closeDropdown(): void {
+    this.activeDropdownPromotionId = null;
+  }
+
+  @HostListener('document:click')
+  onDocumentClick(): void {
+    this.closeDropdown();
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    this.closeDropdown();
   }
 
   openCreateModal(preset?: any): void {

@@ -1,81 +1,210 @@
-<div class="container mt-4">
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <h2>Danh sách khách hàng</h2>
-    <a routerLink="/customers/create" class="btn btn-primary">
-      <i class="bi bi-person-plus"></i> Thêm khách hàng
-    </a>
+<div class="customer-page-container">
+  <!-- Header: Tiêu đề & Nút Thêm khách hàng -->
+  <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mb-4">
+    <div>
+      <h2 class="page-title mb-1">Quản lý Khách hàng</h2>
+      <p class="page-subtitle text-muted mb-0">Quản lý danh sách khách hàng, thông tin liên hệ và lịch sử giao dịch</p>
+    </div>
+    <div>
+      <a routerLink="/customers/create" class="btn btn-primary d-inline-flex align-items-center gap-2 px-3 py-2">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        <span>Thêm khách hàng</span>
+      </a>
+    </div>
   </div>
 
-  <!-- Search -->
-  <div class="row mb-3">
-    <div class="col-md-6">
-      <div class="input-group">
-        <input
-          type="text"
-          class="form-control"
-          placeholder="Tìm theo tên hoặc số điện thoại..."
-          [(ngModel)]="searchTerm"
-          (keyup.enter)="onSearch()">
-        <button class="btn btn-outline-secondary" type="button" (click)="onSearch()">
-          Tìm kiếm
+  <!-- Thông báo thành công -->
+  <div class="alert alert-success d-flex align-items-center gap-2 mb-4" *ngIf="successMessage">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+      <polyline points="22 4 12 14.01 9 11.01"></polyline>
+    </svg>
+    <span>{{ successMessage }}</span>
+  </div>
+
+  <!-- Bộ lọc (Filters) -->
+  <div class="filter-card mb-3 p-3 bg-white border rounded-3">
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3">
+      <!-- Filter 1 (Bên trái): Tìm kiếm theo tên hoặc SĐT -->
+      <div class="filter-search-col">
+        <div class="search-input-wrapper">
+          <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input
+            type="text"
+            class="form-control search-input"
+            placeholder="Tìm theo tên hoặc số điện thoại..."
+            [(ngModel)]="searchTerm"
+            (keyup.enter)="onSearch()">
+          <button *ngIf="searchTerm" type="button" class="btn btn-clear-search" (click)="searchTerm = ''; onSearch()" title="Xóa tìm kiếm">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Filter 2 (Ngoài cùng bên phải): Nút làm mới -->
+      <div class="filter-actions-col d-flex align-items-center gap-2 flex-wrap justify-content-lg-end">
+        <!-- Nút Refresh / Làm mới bộ lọc -->
+        <button
+          type="button"
+          class="btn btn-refresh d-inline-flex align-items-center gap-1.5"
+          (click)="resetFilters()"
+          title="Làm mới bộ lọc về mặc định">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" [class.spin-icon]="loading">
+            <path d="M23 4v6h-6"></path>
+            <path d="M1 20v-6h6"></path>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+          </svg>
+          <span> Làm mới</span>
         </button>
       </div>
     </div>
   </div>
 
-  <!-- Loading -->
-  <div *ngIf="loading" class="text-center my-4">
-    <div class="spinner-border" role="status">
+  <!-- Loading State -->
+  <div class="text-center my-5 py-4" *ngIf="loading">
+    <div class="spinner-border text-primary" role="status">
       <span class="visually-hidden">Đang tải...</span>
+    </div>
+    <div class="text-muted small mt-2">Đang tải danh sách khách hàng...</div>
+  </div>
+
+  <!-- Table Card -->
+  <div class="card table-card border rounded-3" *ngIf="!loading">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead>
+          <tr>
+            <th scope="col" class="text-center" style="width: 60px">STT</th>
+            <th scope="col" style="min-width: 180px">Họ và tên</th>
+            <th scope="col" style="min-width: 140px">Số điện thoại</th>
+            <th scope="col" style="min-width: 180px">Email</th>
+            <th scope="col" style="min-width: 200px">Địa chỉ</th>
+            <th scope="col" style="min-width: 120px">Ngày tạo</th>
+            <th scope="col" class="text-end" style="width: 80px">Thao tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let customer of customers; let i = index">
+            <!-- STT -->
+            <td class="text-center text-muted fw-medium">{{ (currentPage - 1) * pageSize + i + 1 }}</td>
+
+            <!-- Họ tên -->
+            <td>
+              <div class="fw-semibold text-dark">{{ customer.name }}</div>
+            </td>
+
+            <!-- SĐT -->
+            <td>
+              <span class="phone-text font-monospace">{{ customer.phone }}</span>
+            </td>
+
+            <!-- Email -->
+            <td>
+              <span class="text-muted small">{{ customer.email || '—' }}</span>
+            </td>
+
+            <!-- Địa chỉ -->
+            <td>
+              <span class="text-muted small">{{ customer.address || '—' }}</span>
+            </td>
+
+            <!-- Ngày tạo -->
+            <td class="text-muted small">
+              {{ customer.createdAt | date:'dd/MM/yyyy' }}
+            </td>
+
+            <!-- Thao tác: 3 chấm dropdown -->
+            <td class="text-end">
+              <div class="action-dropdown" [class.dropup]="i >= customers.length - 2 && customers.length > 2" (click)="$event.stopPropagation()">
+                <button
+                  type="button"
+                  class="btn-action-trigger"
+                  [class.active]="activeDropdownCustomerId === customer.id"
+                  (click)="toggleDropdown(customer.id, $event)"
+                  title="Thao tác"
+                  aria-label="Thao tác">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                    <circle cx="12" cy="5" r="2"></circle>
+                    <circle cx="12" cy="12" r="2"></circle>
+                    <circle cx="12" cy="19" r="2"></circle>
+                  </svg>
+                </button>
+
+                <!-- Dropdown Menu -->
+                <div class="action-menu shadow-lg border rounded-3 bg-white" *ngIf="activeDropdownCustomerId === customer.id">
+                  <!-- Sửa -->
+                  <a
+                    [routerLink]="['/customers/edit', customer.id]"
+                    class="action-item"
+                    (click)="closeDropdown()">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                    <span>Sửa</span>
+                  </a>
+
+                  <div class="action-divider"></div>
+
+                  <!-- Xóa -->
+                  <button
+                    type="button"
+                    class="action-item action-cancel"
+                    (click)="onDelete(customer.id, customer.name)">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="3 6 5 6 21 6"></polyline>
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                      <line x1="10" y1="11" x2="10" y2="17"></line>
+                      <line x1="14" y1="11" x2="14" y2="17"></line>
+                    </svg>
+                    <span>Xóa</span>
+                  </button>
+                </div>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Empty State -->
+          <tr *ngIf="customers.length === 0">
+            <td colspan="7" class="text-center py-5 text-muted">
+              <div class="empty-state">
+                <p class="mt-2 mb-0">Chưa có khách hàng nào phù hợp.</p>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </div>
 
-  <!-- Table -->
-  <div *ngIf="!loading && customers.length > 0" class="table-responsive">
-    <table class="table table-striped table-hover">
-      <thead>
-        <tr>
-          <th>Họ tên</th>
-          <th>Số điện thoại</th>
-          <th>Email</th>
-          <th>Địa chỉ</th>
-          <th>Ngày tạo</th>
-          <th>Thao tác</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let customer of customers">
-          <td><strong>{{ customer.name }}</strong></td>
-          <td><code>{{ customer.phone }}</code></td>
-          <td>{{ customer.email || '-' }}</td>
-          <td>{{ customer.address || '-' }}</td>
-          <td>{{ customer.createdAt | date:'dd/MM/yyyy' }}</td>
-          <td>
-            <a [routerLink]="['/customers/edit', customer.id]" class="btn btn-sm btn-warning me-1">Sửa</a>
-            <button (click)="onDelete(customer.id, customer.name)" class="btn btn-sm btn-danger">Xóa</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-  <!-- No data -->
-  <div *ngIf="!loading && customers.length === 0" class="alert alert-info">
-    Chưa có khách hàng nào
-  </div>
-
   <!-- Pagination -->
-  <nav *ngIf="pagedResult && pagedResult.totalPages > 1" aria-label="Page navigation">
-    <ul class="pagination justify-content-center">
+  <div class="d-flex justify-content-between align-items-center mt-3" *ngIf="pagedResult && pagedResult.totalPages > 1">
+    <div class="text-muted small">
+      Hiển thị trang {{ pagedResult.page }} / {{ pagedResult.totalPages }} (Tổng {{ pagedResult.totalCount }} khách hàng)
+    </div>
+    <ul class="pagination mb-0">
       <li class="page-item" [class.disabled]="!pagedResult.hasPrevious">
-        <button class="page-link" (click)="onPageChange(currentPage - 1)" [disabled]="!pagedResult.hasPrevious">Trước</button>
+        <button class="page-link" (click)="onPageChange(currentPage - 1)" [disabled]="!pagedResult.hasPrevious">
+          Trước
+        </button>
       </li>
       <li class="page-item active">
-        <span class="page-link">Trang {{ pagedResult.page }} / {{ pagedResult.totalPages }}</span>
+        <span class="page-link">{{ pagedResult.page }}</span>
       </li>
       <li class="page-item" [class.disabled]="!pagedResult.hasNext">
-        <button class="page-link" (click)="onPageChange(currentPage + 1)" [disabled]="!pagedResult.hasNext">Sau</button>
+        <button class="page-link" (click)="onPageChange(currentPage + 1)" [disabled]="!pagedResult.hasNext">
+          Sau
+        </button>
       </li>
     </ul>
-  </nav>
+  </div>
 </div>
