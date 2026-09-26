@@ -8,6 +8,7 @@ using MinimalAPI.Application.Features.Orders.CreateOrder;
 using MinimalAPI.Application.Features.Orders.DTOs;
 using MinimalAPI.Application.Features.Orders.GetOrder;
 using MinimalAPI.Application.Features.Orders.GetOrders;
+using MinimalAPI.Application.Features.Orders.UpdateOrder;
 
 namespace MinimalAPI.Api.Endpoints;
 
@@ -56,6 +57,24 @@ public static class OrderEndpoints
         .WithName("CreateOrder")
         .WithSummary("Tạo đơn hàng mới (trạng thái Pending)")
         .Produces<Guid>(StatusCodes.Status201Created)
+        .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
+
+        group.MapPut("/{id:guid}", async Task<IResult> (Guid id, UpdateOrderCommand command, ISender sender) =>
+        {
+            var result = await sender.Send(command with { Id = id });
+            if (!result.IsSuccess)
+            {
+                return result.Error == "Đơn hàng không tồn tại."
+                    ? TypedResults.NotFound(new { error = result.Error })
+                    : TypedResults.BadRequest(new { error = result.Error });
+            }
+
+            return TypedResults.Ok(new { orderId = result.Value, message = "Cập nhật đơn hàng thành công." });
+        })
+        .WithName("UpdateOrder")
+        .WithSummary("Cập nhật thông tin đơn hàng và khách hàng")
+        .Produces(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status404NotFound)
         .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
 
         group.MapPut("/{id:guid}/confirm", async Task<IResult> (Guid id, ISender sender) =>

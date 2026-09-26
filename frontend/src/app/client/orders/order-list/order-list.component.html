@@ -95,6 +95,7 @@
       <table class="table table-hover align-middle mb-0">
         <thead>
           <tr>
+            <th scope="col" class="text-center" style="width: 60px;">STT</th>
             <th scope="col" style="min-width: 170px;">Mã đơn</th>
             <th scope="col" style="min-width: 140px;">Khách hàng</th>
             <th scope="col" style="min-width: 120px;">Số ĐT</th>
@@ -107,6 +108,11 @@
         </thead>
         <tbody>
           <tr *ngFor="let order of orders; let i = index">
+            <!-- STT -->
+            <td class="text-center text-muted fw-medium">
+              {{ (currentPage - 1) * pageSize + i + 1 }}
+            </td>
+
             <!-- Mã đơn -->
             <td>
               <a [routerLink]="['/orders', order.id]" class="order-code-link" title="Xem chi tiết đơn">
@@ -213,20 +219,6 @@
                       <line x1="9" y1="9" x2="15" y2="15"></line>
                     </svg>
                     <span>Hủy</span>
-                  </button>
-
-                  <div class="action-divider"></div>
-
-                  <!-- Đóng popup menu -->
-                  <button
-                    type="button"
-                    class="action-item action-close-menu text-muted"
-                    (click)="closeDropdown()">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <line x1="18" y1="6" x2="6" y2="18"></line>
-                      <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                    <span>Đóng menu</span>
                   </button>
                 </div>
               </div>

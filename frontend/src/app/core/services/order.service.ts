@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { OrderSummary, OrderDetail, CreateOrderRequest } from '../models/order.model';
+import { OrderSummary, OrderDetail, CreateOrderRequest, UpdateOrderRequest } from '../models/order.model';
 import { PagedResult } from '../models/paged-result.model';
 
 @Injectable({
@@ -38,6 +38,10 @@ export class OrderService {
     return this.http.post<string>(this.apiUrl, data);
   }
 
+  update(id: string, data: UpdateOrderRequest): Observable<{ orderId: string; message: string }> {
+    return this.http.put<{ orderId: string; message: string }>(`${this.apiUrl}/${id}`, data);
+  }
+
   confirm(id: string): Observable<{ orderId: string; message: string }> {
     return this.http.put<{ orderId: string; message: string }>(`${this.apiUrl}/${id}/confirm`, {});
   }
@@ -50,3 +54,4 @@ export class OrderService {
     return this.http.put<{ orderId: string; message: string }>(`${this.apiUrl}/${id}/complete`, {});
   }
 }
+

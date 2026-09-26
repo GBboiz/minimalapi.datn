@@ -7,6 +7,7 @@ export interface OrderItem {
   quantity: number;
   totalPrice: number;
   isGift?: boolean;
+  unitPriceDisplay?: string;
 }
 
 export interface OrderSummary {
@@ -55,5 +56,21 @@ export interface CreateOrderRequest {
   discountPercent?: number;
   discountAmount?: number;
   promotionCode?: string;
+}
+
+export interface UpdateOrderItemRequest {
+  productId: string;
+  quantity: number;
+  isGift?: boolean;
+  unitPrice?: number;
+}
+
+export interface UpdateOrderRequest {
+  customerName?: string;
+  customerPhone?: string;
+  customerAddress?: string;
+  items?: UpdateOrderItemRequest[];
+  discountPercent?: number;
+  discountAmount?: number;
 }
 

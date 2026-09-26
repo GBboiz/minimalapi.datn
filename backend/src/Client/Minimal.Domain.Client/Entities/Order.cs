@@ -110,4 +110,90 @@ public sealed class Order : AggregateRoot<OrderId>
         Status = OrderStatus.Cancelled;
         UpdatedAt = DateTime.UtcNow;
     }
+
+    public void UpdateOrderDetails(
+        List<OrderItem> items,
+        decimal discountPercent = 0,
+        decimal discountAmountOverride = 0)
+    {
+        if (Status != OrderStatus.Pending)
+            throw new DomainException($"Chỉ có thể chỉnh sửa đơn hàng đang ở trạng thái Chờ duyệt (Pending). Trạng thái hiện tại: {Status}.");
+
+        if (items.Count == 0)
+            throw new DomainException("Đơn hàng phải có ít nhất một sản phẩm.");
+
+        if (discountPercent < 0 || discountPercent > 100)
+            throw new DomainException("Phần trăm giảm giá phải nằm trong khoảng từ 0% đến 100%.");
+
+        if (discountAmountOverride < 0)
+            throw new DomainException("Số tiền giảm giá không được âm.");
+
+        var currency = items[0].UnitPrice.Currency;
+        var subTotal = items.Where(i => !i.IsGift).Sum(i => i.TotalPrice);
+
+        decimal calculatedDiscount;
+        if (discountAmountOverride > 0)
+        {
+            calculatedDiscount = Math.Min(subTotal, discountAmountOverride);
+            if (discountPercent == 0 && subTotal > 0)
+            {
+                discountPercent = Math.Round((calculatedDiscount / subTotal) * 100m, 2);
+            }
+        }
+        else
+        {
+            calculatedDiscount = Math.Round(subTotal * (discountPercent / 100m), 0);
+        }
+
+        var finalTotal = Math.Max(0, subTotal - calculatedDiscount);
+
+        _items.Clear();
+        _items.AddRange(items);
+
+        SubTotal = Money.Create(subTotal, currency);
+        DiscountPercent = discountPercent;
+        DiscountAmount = Money.Create(calculatedDiscount, currency);
+        TotalAmount = Money.Create(finalTotal, currency);
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void UpdateDiscount(decimal discountPercent, decimal discountAmountOverride = 0)
+    {
+        if (Status != OrderStatus.Pending)
+            throw new DomainException($"Chỉ có thể chỉnh sửa chiết khấu khi đơn hàng ở trạng thái Chờ duyệt (Pending). Trạng thái hiện tại: {Status}.");
+
+        if (_items.Count == 0)
+            throw new DomainException("Đơn hàng phải có ít nhất một sản phẩm.");
+
+        if (discountPercent < 0 || discountPercent > 100)
+            throw new DomainException("Phần trăm giảm giá phải nằm trong khoảng từ 0% đến 100%.");
+
+        if (discountAmountOverride < 0)
+            throw new DomainException("Số tiền giảm giá không được âm.");
+
+        var currency = _items[0].UnitPrice.Currency;
+        var subTotal = _items.Where(i => !i.IsGift).Sum(i => i.TotalPrice);
+
+        decimal calculatedDiscount;
+        if (discountAmountOverride > 0)
+        {
+            calculatedDiscount = Math.Min(subTotal, discountAmountOverride);
+            if (discountPercent == 0 && subTotal > 0)
+            {
+                discountPercent = Math.Round((calculatedDiscount / subTotal) * 100m, 2);
+            }
+        }
+        else
+        {
+            calculatedDiscount = Math.Round(subTotal * (discountPercent / 100m), 0);
+        }
+
+        var finalTotal = Math.Max(0, subTotal - calculatedDiscount);
+
+        DiscountPercent = discountPercent;
+        DiscountAmount = Money.Create(calculatedDiscount, currency);
+        TotalAmount = Money.Create(finalTotal, currency);
+        UpdatedAt = DateTime.UtcNow;
+    }
 }
+
