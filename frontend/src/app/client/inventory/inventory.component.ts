@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { InventoryService } from '../../core/services/inventory.service';
@@ -19,6 +19,9 @@ export class InventoryComponent implements OnInit {
   saving = false;
   searchTerm = '';
   lowStockOnly = false;
+
+  // Dropdown 3 chấm
+  activeDropdownItemId: string | null = null;
 
   // Modal điều chỉnh kho
   showAdjustModal = false;
@@ -50,12 +53,38 @@ export class InventoryComponent implements OnInit {
     this.loadInventory();
   }
 
+  resetFilters(): void {
+    this.searchTerm = '';
+    this.lowStockOnly = false;
+    this.loadInventory();
+  }
+
   toggleLowStockFilter(): void {
     this.lowStockOnly = !this.lowStockOnly;
     this.loadInventory();
   }
 
+  toggleDropdown(id: string, event: Event): void {
+    event.stopPropagation();
+    this.activeDropdownItemId = this.activeDropdownItemId === id ? null : id;
+  }
+
+  closeDropdown(): void {
+    this.activeDropdownItemId = null;
+  }
+
+  @HostListener('document:click')
+  onDocumentClick(): void {
+    this.closeDropdown();
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    this.closeDropdown();
+  }
+
   openAdjustModal(item: InventoryItem): void {
+    this.closeDropdown();
     this.selectedItem = item;
     this.stockChange = 0;
     this.adjustReason = '';
