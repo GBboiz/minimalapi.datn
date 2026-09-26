@@ -1,20 +1,19 @@
-<div class="page-container">
-  <!-- Page Header -->
-  <div class="page-header d-flex justify-content-between align-items-center mb-4">
+<div class="gifts-page-container">
+  <!-- Header: Tiêu đề & Nút Gán quà -->
+  <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mb-4">
     <div>
-      <h1 class="page-title d-flex align-items-center gap-2 m-0">
-        <span class="header-icon">🎁</span>
-        Quản lý Quà tặng
-      </h1>
-      <p class="text-muted m-0 mt-1">Cấu hình quà tặng kèm theo sản phẩm (tự động gắn vào đơn hàng khi bán sản phẩm chính)</p>
+      <h2 class="page-title mb-1">Quản lý Quà tặng</h2>
+      <p class="page-subtitle text-muted mb-0">Cấu hình quà tặng kèm theo sản phẩm (tự động gắn vào đơn hàng khi bán sản phẩm chính)</p>
     </div>
-    <button class="btn btn-primary d-flex align-items-center gap-2" (click)="openAssignModal()">
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-        <line x1="12" y1="5" x2="12" y2="19"></line>
-        <line x1="5" y1="12" x2="19" y2="12"></line>
-      </svg>
-      Gán quà tặng cho sản phẩm
-    </button>
+    <div>
+      <button class="btn btn-primary d-inline-flex align-items-center gap-2 px-3 py-2" (click)="openAssignModal()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        <span>Gán quà tặng cho sản phẩm</span>
+      </button>
+    </div>
   </div>
 
   <!-- Thông báo thành công -->
@@ -26,103 +25,181 @@
     <span>{{ successMessage }}</span>
   </div>
 
-  <!-- Search & Filter Card -->
-  <div class="card mb-4 filter-card">
-    <div class="card-body">
-      <div class="row g-3">
-        <div class="col-md-7">
-          <div class="search-input-group">
-            <span class="search-icon">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="11" cy="11" r="8"></circle>
-                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-              </svg>
-            </span>
-            <input
-              type="text"
-              class="form-control ps-5"
-              placeholder="Tìm theo tên sản phẩm hoặc mã SKU..."
-              [(ngModel)]="searchTerm"
-            />
-          </div>
+  <!-- Bộ lọc (Filters) -->
+  <div class="filter-card mb-3 p-3 bg-white border rounded-3">
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3">
+      <!-- Filter 1 (Bên trái): Tìm kiếm theo tên hoặc SKU -->
+      <div class="filter-search-col">
+        <div class="search-input-wrapper">
+          <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input
+            type="text"
+            class="form-control search-input"
+            placeholder="Tìm theo tên sản phẩm hoặc mã SKU..."
+            [(ngModel)]="searchTerm">
+          <button *ngIf="searchTerm" type="button" class="btn btn-clear-search" (click)="searchTerm = ''" title="Xóa tìm kiếm">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
         </div>
-        <div class="col-md-5">
-          <select class="form-select" [(ngModel)]="filterStatus">
+      </div>
+
+      <!-- Filter 2 (Ngoài cùng bên phải): Trạng thái quà tặng & Nút làm mới -->
+      <div class="filter-actions-col d-flex align-items-center gap-2 flex-wrap justify-content-lg-end">
+        <div class="filter-item-status">
+          <select class="form-select filter-select" [(ngModel)]="filterStatus">
             <option value="ALL">Tất cả sản phẩm</option>
-            <option value="HAS_GIFT">Đã có quà tặng kèm (🎁)</option>
+            <option value="HAS_GIFT">Đã có quà tặng kèm</option>
             <option value="NO_GIFT">Chưa có quà tặng kèm</option>
           </select>
         </div>
+
+        <!-- Nút Refresh / Làm mới bộ lọc -->
+        <button
+          type="button"
+          class="btn btn-refresh d-inline-flex align-items-center gap-1.5"
+          (click)="resetFilters()"
+          title="Làm mới bộ lọc về mặc định">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" [class.spin-icon]="loading">
+            <path d="M23 4v6h-6"></path>
+            <path d="M1 20v-6h6"></path>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+          </svg>
+          <span> Làm mới</span>
+        </button>
       </div>
     </div>
   </div>
 
   <!-- Loading State -->
-  <div class="text-center py-5" *ngIf="loading">
+  <div class="text-center my-5 py-4" *ngIf="loading">
     <div class="spinner-border text-primary" role="status">
       <span class="visually-hidden">Đang tải...</span>
     </div>
-    <p class="text-muted mt-2">Đang tải danh sách quà tặng...</p>
+    <div class="text-muted small mt-2">Đang tải danh sách quà tặng...</div>
   </div>
 
   <!-- Table Card -->
-  <div class="card table-card" *ngIf="!loading">
+  <div class="card table-card border rounded-3" *ngIf="!loading">
     <div class="table-responsive">
       <table class="table table-hover align-middle mb-0">
-        <thead class="table-light">
+        <thead>
           <tr>
-            <th class="text-center" style="width: 60px">STT</th>
-            <th>Sản phẩm chính</th>
-            <th>Mã SKU</th>
-            <th>Giá niêm yết</th>
-            <th>Tồn kho</th>
-            <th>Quà tặng kèm</th>
-            <th class="text-end" style="width: 180px">Thao tác</th>
+            <th scope="col" class="text-center" style="width: 60px">STT</th>
+            <th scope="col" style="min-width: 220px">Sản phẩm chính</th>
+            <th scope="col" style="min-width: 120px">Mã SKU</th>
+            <th scope="col" class="text-end" style="min-width: 130px">Giá niêm yết</th>
+            <th scope="col" class="text-center" style="min-width: 90px">Tồn kho</th>
+            <th scope="col" style="min-width: 180px">Quà tặng kèm</th>
+            <th scope="col" class="text-end" style="width: 80px">Thao tác</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let product of filteredProducts; let i = index">
-            <td class="text-center text-muted">{{ i + 1 }}</td>
+            <!-- STT -->
+            <td class="text-center text-muted fw-medium">{{ i + 1 }}</td>
+
+            <!-- Sản phẩm chính -->
             <td>
               <div class="fw-semibold text-dark">{{ product.name }}</div>
               <small class="text-muted">{{ product.categoryName }}</small>
             </td>
+
+            <!-- SKU -->
             <td>
               <span class="badge bg-light text-dark font-monospace border">{{ product.sku }}</span>
             </td>
-            <td class="fw-semibold text-primary">
-              {{ product.price | number:'1.0-0' }} {{ product.currency }}
+
+            <!-- Giá niêm yết -->
+            <td class="text-end text-nowrap">
+              <span class="fw-semibold text-primary fs-6">{{ product.price | number:'1.0-0' }} {{ product.currency }}</span>
             </td>
-            <td>
+
+            <!-- Tồn kho -->
+            <td class="text-center">
               <span class="badge" [ngClass]="product.stockQuantity > 5 ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-danger-subtle text-danger border border-danger-subtle'">
                 {{ product.stockQuantity }} tồn
               </span>
             </td>
+
+            <!-- Quà tặng kèm -->
             <td>
-              <div *ngIf="product.giftProductName" class="gift-badge-container d-inline-flex align-items-center gap-2 px-2 py-1 rounded bg-warning-subtle border border-warning-subtle">
-                <span class="gift-icon">🎁</span>
-                <span class="fw-medium text-warning-emphasis">{{ product.giftProductName }}</span>
-                <span class="badge bg-warning text-dark font-monospace">0đ</span>
-              </div>
+              <span *ngIf="product.giftProductName" class="gift-tag">
+                {{ product.giftProductName }}
+              </span>
               <span *ngIf="!product.giftProductName" class="text-muted small fst-italic">
                 Chưa gán quà
               </span>
             </td>
+
+            <!-- Thao tác: 3 chấm dropdown -->
             <td class="text-end">
-              <div class="btn-group btn-group-sm">
+              <div class="action-dropdown" [class.dropup]="i >= filteredProducts.length - 2 && filteredProducts.length > 2" (click)="$event.stopPropagation()">
                 <button
-                  class="btn btn-outline-primary"
-                  (click)="openAssignModal(product)"
-                  title="Gán hoặc đổi quà tặng">
-                  {{ product.giftProductId ? 'Đổi quà' : 'Gán quà' }}
+                  type="button"
+                  class="btn-action-trigger"
+                  [class.active]="activeDropdownProductId === product.id"
+                  (click)="toggleDropdown(product.id, $event)"
+                  title="Thao tác"
+                  aria-label="Thao tác">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                    <circle cx="12" cy="5" r="2"></circle>
+                    <circle cx="12" cy="12" r="2"></circle>
+                    <circle cx="12" cy="19" r="2"></circle>
+                  </svg>
                 </button>
-                <button
-                  *ngIf="product.giftProductId"
-                  class="btn btn-outline-danger"
-                  (click)="removeGift(product)"
-                  title="Gỡ quà tặng kèm">
-                  Gỡ quà
-                </button>
+
+                <!-- Dropdown Menu -->
+                <div class="action-menu shadow-lg border rounded-3 bg-white" *ngIf="activeDropdownProductId === product.id">
+                  <ng-container *ngIf="product.giftProductId">
+                    <!-- Đổi quà -->
+                    <button
+                      type="button"
+                      class="action-item"
+                      (click)="onEditGift(product)">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                      </svg>
+                      <span>Đổi quà</span>
+                    </button>
+
+                    <div class="action-divider"></div>
+
+                    <!-- Gỡ quà -->
+                    <button
+                      type="button"
+                      class="action-item action-cancel"
+                      (click)="onRemoveGift(product)">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        <line x1="10" y1="11" x2="10" y2="17"></line>
+                        <line x1="14" y1="11" x2="14" y2="17"></line>
+                      </svg>
+                      <span>Gỡ quà</span>
+                    </button>
+                  </ng-container>
+
+                  <ng-container *ngIf="!product.giftProductId">
+                    <!-- Gán quà -->
+                    <button
+                      type="button"
+                      class="action-item"
+                      (click)="onAssignGift(product)">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                      </svg>
+                      <span>Gán quà</span>
+                    </button>
+                  </ng-container>
+                </div>
               </div>
             </td>
           </tr>
@@ -131,7 +208,6 @@
           <tr *ngIf="filteredProducts.length === 0">
             <td colspan="7" class="text-center py-5 text-muted">
               <div class="empty-state">
-                <span class="empty-icon fs-1">🎁</span>
                 <p class="mt-2 mb-0">Không tìm thấy sản phẩm nào phù hợp.</p>
               </div>
             </td>
@@ -141,15 +217,13 @@
     </div>
   </div>
 
-  <!-- Modal Gán Quà Tặng -->
+  <!-- Modal Gán / Đổi Quà Tặng -->
   <div class="modal-backdrop fade show" *ngIf="showAssignModal" (click)="closeModal()"></div>
   <div class="modal fade show d-block" tabindex="-1" *ngIf="showAssignModal">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content shadow-lg border-0">
         <div class="modal-header border-bottom">
-          <h5 class="modal-title d-flex align-items-center gap-2">
-            <span>🎁</span> Gán quà tặng kèm cho sản phẩm
-          </h5>
+          <h5 class="modal-title">{{ isEditMode ? 'Đổi quà tặng kèm cho sản phẩm' : 'Gán quà tặng kèm cho sản phẩm' }}</h5>
           <button type="button" class="btn-close" (click)="closeModal()"></button>
         </div>
         <div class="modal-body p-4">
@@ -158,8 +232,18 @@
             {{ errorMessage }}
           </div>
 
-          <!-- Chọn sản phẩm chính -->
-          <div class="mb-3">
+          <!-- Thông tin sản phẩm chính (hiển thị cố định khi đổi quà, không cho chọn/đổi sản phẩm chính) -->
+          <div class="mb-3 p-3 bg-light rounded-3 border" *ngIf="isEditMode && selectedProduct">
+            <div class="text-muted small mb-1">Sản phẩm chính:</div>
+            <div class="fw-semibold text-dark fs-6">{{ selectedProduct.name }}</div>
+            <div class="d-flex align-items-center gap-2 mt-1 small text-muted">
+              <span class="badge bg-secondary-subtle text-secondary font-monospace border">{{ selectedProduct.sku }}</span>
+              <span>{{ selectedProduct.price | number:'1.0-0' }} {{ selectedProduct.currency }}</span>
+            </div>
+          </div>
+
+          <!-- Chọn sản phẩm chính (Chỉ hiện khi gán quà mới, ẩn khi đổi quà) -->
+          <div class="mb-3" *ngIf="!isEditMode">
             <label class="form-label fw-semibold">1. Chọn sản phẩm chính <span class="text-danger">*</span></label>
             <select class="form-select" [(ngModel)]="selectedProductId">
               <option value="" disabled>-- Chọn sản phẩm chính --</option>
@@ -172,11 +256,14 @@
 
           <!-- Chọn sản phẩm làm quà tặng -->
           <div class="mb-3">
-            <label class="form-label fw-semibold">2. Chọn sản phẩm làm quà tặng (0đ) <span class="text-danger">*</span></label>
+            <label class="form-label fw-semibold">
+              {{ isEditMode ? 'Chọn sản phẩm làm quà tặng (0đ)' : '2. Chọn sản phẩm làm quà tặng (0đ)' }}
+              <span class="text-danger">*</span>
+            </label>
             <select class="form-select" [(ngModel)]="selectedGiftProductId">
               <option value="">-- Không gán quà / Gỡ quà --</option>
               <option *ngFor="let p of availableGifts" [value]="p.id">
-                🎁 {{ p.name }} ({{ p.sku }}) - Tồn kho: {{ p.stockQuantity }}
+                {{ p.name }} ({{ p.sku }}) - Tồn kho: {{ p.stockQuantity }}
               </option>
             </select>
             <div class="form-text">Sản phẩm này sẽ được tự động thêm vào đơn hàng với đơn giá 0đ.</div>
@@ -186,7 +273,7 @@
           <button type="button" class="btn btn-secondary" (click)="closeModal()" [disabled]="saving">Hủy</button>
           <button type="button" class="btn btn-primary d-flex align-items-center gap-2" (click)="saveGift()" [disabled]="saving">
             <span class="spinner-border spinner-border-sm" *ngIf="saving"></span>
-            {{ saving ? 'Đang lưu...' : 'Lưu cấu hình quà' }}
+            {{ saving ? 'Đang lưu...' : (isEditMode ? 'Cập nhật quà tặng' : 'Lưu cấu hình quà') }}
           </button>
         </div>
       </div>

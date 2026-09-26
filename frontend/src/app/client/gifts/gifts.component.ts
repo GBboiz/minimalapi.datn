@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ProductService } from '../../core/services/product.service';
@@ -20,12 +20,20 @@ export class GiftsComponent implements OnInit {
   searchTerm = '';
   filterStatus = 'ALL'; // ALL, HAS_GIFT, NO_GIFT
 
+  // Dropdown action
+  activeDropdownProductId: string | null = null;
+
   // Modal gán quà
   showAssignModal = false;
+  isEditMode = false;
   selectedProductId: string = '';
   selectedGiftProductId: string = '';
   errorMessage: string = '';
   successMessage: string = '';
+
+  get selectedProduct(): Product | undefined {
+    return this.products.find(p => p.id === this.selectedProductId);
+  }
 
   ngOnInit(): void {
     this.loadProducts();
@@ -64,9 +72,50 @@ export class GiftsComponent implements OnInit {
     return this.products.filter(p => p.id !== this.selectedProductId);
   }
 
-  openAssignModal(product?: Product): void {
+  resetFilters(): void {
+    this.searchTerm = '';
+    this.filterStatus = 'ALL';
+    this.loadProducts();
+  }
+
+  toggleDropdown(id: string, event: Event): void {
+    event.stopPropagation();
+    this.activeDropdownProductId = this.activeDropdownProductId === id ? null : id;
+  }
+
+  closeDropdown(): void {
+    this.activeDropdownProductId = null;
+  }
+
+  @HostListener('document:click')
+  onDocumentClick(): void {
+    this.closeDropdown();
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    this.closeDropdown();
+  }
+
+  onEditGift(product: Product): void {
+    this.closeDropdown();
+    this.openAssignModal(product, true);
+  }
+
+  onAssignGift(product: Product): void {
+    this.closeDropdown();
+    this.openAssignModal(product, false);
+  }
+
+  onRemoveGift(product: Product): void {
+    this.closeDropdown();
+    this.removeGift(product);
+  }
+
+  openAssignModal(product?: Product, isEdit: boolean = false): void {
     this.errorMessage = '';
     this.successMessage = '';
+    this.isEditMode = isEdit;
     if (product) {
       this.selectedProductId = product.id;
       this.selectedGiftProductId = product.giftProductId || '';
@@ -79,6 +128,7 @@ export class GiftsComponent implements OnInit {
 
   closeModal(): void {
     this.showAssignModal = false;
+    this.isEditMode = false;
     this.selectedProductId = '';
     this.selectedGiftProductId = '';
     this.errorMessage = '';
@@ -98,7 +148,9 @@ export class GiftsComponent implements OnInit {
     this.productService.setGift(this.selectedProductId, giftId).subscribe({
       next: () => {
         this.saving = false;
-        this.successMessage = giftId ? 'Đã gán quà tặng thành công!' : 'Đã gỡ quà tặng!';
+        this.successMessage = giftId
+          ? (this.isEditMode ? 'Đã cập nhật quà tặng thành công!' : 'Đã gán quà tặng thành công!')
+          : 'Đã gỡ quà tặng!';
         this.closeModal();
         this.loadProducts();
         setTimeout(() => this.successMessage = '', 3500);
