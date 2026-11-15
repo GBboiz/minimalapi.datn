@@ -6,5 +6,7 @@ public sealed record GoogleSheetStatusDto(
     string SpreadsheetId,
     string SheetName,
     DateTime? LastSyncAt,
-    string? LastErrorMessage
+    string? LastErrorMessage,
+    /// <summary>true khi server chưa cấu hình Google OAuth (Google:ClientId) — chỉ giả lập, không ghi Sheet thật.</summary>
+    bool IsMockMode
 );

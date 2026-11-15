@@ -28,7 +28,7 @@ public sealed class GoogleSheetsService : IGoogleSheetsService
     private string? ClientId => _configuration["Google:ClientId"];
     private string? ClientSecret => _configuration["Google:ClientSecret"];
     private string RedirectUri => _configuration["Google:RedirectUri"] ?? "http://localhost:5001/api/googlesheets/callback";
-    private bool IsMockMode => string.IsNullOrWhiteSpace(ClientId) || ClientId.StartsWith("mock", StringComparison.OrdinalIgnoreCase) || ClientId.StartsWith("demo", StringComparison.OrdinalIgnoreCase);
+    public bool IsMockMode => string.IsNullOrWhiteSpace(ClientId) || ClientId.StartsWith("mock", StringComparison.OrdinalIgnoreCase) || ClientId.StartsWith("demo", StringComparison.OrdinalIgnoreCase);
 
     public string GetAuthorizationUrl(string state)
     {
@@ -93,7 +93,11 @@ public sealed class GoogleSheetsService : IGoogleSheetsService
         OrderSyncPayload payload,
         CancellationToken ct = default)
     {
-        if (IsMockMode || decryptedRefreshToken.StartsWith("demo_", StringComparison.OrdinalIgnoreCase))
+        if (!IsMockMode && decryptedRefreshToken.StartsWith("demo_", StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException(
+                "Cửa hàng đang dùng token demo. Vui lòng bấm 'Lưu cấu hình & Kết nối với Google' để cấp quyền thật.");
+
+        if (IsMockMode)
         {
             _logger.LogInformation(
                 "[GoogleSheets Mock] Đã đồng bộ đơn hàng {Code} vào Sheet '{Sheet}' (Spreadsheet ID: {Id}): Khách {Customer}, Tổng tiền {Total} {Currency}",
@@ -120,16 +124,19 @@ public sealed class GoogleSheetsService : IGoogleSheetsService
         var tokenData = await tokenResponse.Content.ReadFromJsonAsync<GoogleTokenResponse>(cancellationToken: ct);
         var accessToken = tokenData?.AccessToken;
 
-        // 2. Ghi dòng vào Sheet qua Google Sheets API v4
-        var range = $"{sheetName}!A:H";
-        var url = $"https://sheets.googleapis.com/v4/spreadsheets/{spreadsheetId}/values/{Uri.EscapeDataString(range)}:append?valueInputOption=USER_ENTERED";
+        // 2. Đảm bảo dòng tiêu đề, rồi ghi dòng vào Sheet qua Google Sheets API v4
+        await EnsureHeaderRowAsync(spreadsheetId, sheetName, accessToken, ct);
+
+        var range = $"{QuoteSheetName(sheetName)}!A:H";
+        var url = $"https://sheets.googleapis.com/v4/spreadsheets/{spreadsheetId}/values/{Uri.EscapeDataString(range)}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS";
 
         var rowValues = new object[]
         {
             payload.Code,
-            payload.CreatedAt.ToString("dd/MM/yyyy HH:mm"),
+            ToLocalTime(payload.CreatedAt).ToString("dd/MM/yyyy HH:mm"),
             payload.CustomerName,
-            payload.CustomerPhone,
+            // Dấu ' buộc Google giữ nguyên dạng văn bản (không mất số 0 đầu)
+            $"'{payload.CustomerPhone}",
             payload.ProductsSummary,
             payload.TotalQuantity,
             $"{payload.TotalAmount:N0} {payload.Currency}",
@@ -156,6 +163,95 @@ public sealed class GoogleSheetsService : IGoogleSheetsService
         }
 
         _logger.LogInformation("[GoogleSheets] Ghi thành công đơn {Code} vào Google Sheet {Id}", payload.Code, spreadsheetId);
+    }
+
+    private static readonly string[] HeaderRow =
+        ["Mã đơn hàng", "Ngày tạo", "Khách hàng", "Số điện thoại", "Sản phẩm", "Số lượng", "Tổng tiền", "Trạng thái"];
+
+    private static string QuoteSheetName(string sheetName) => $"'{sheetName.Replace("'", "''")}'";
+
+    /// <summary>Đổi giờ UTC sang múi giờ cấu hình (mặc định giờ Việt Nam, UTC+7).</summary>
+    private DateTime ToLocalTime(DateTime value)
+    {
+        var utc = value.Kind == DateTimeKind.Utc ? value : DateTime.SpecifyKind(value, DateTimeKind.Utc);
+        var timeZoneId = _configuration["Google:TimeZone"] ?? "Asia/Ho_Chi_Minh";
+        try
+        {
+            return TimeZoneInfo.ConvertTimeFromUtc(utc, TimeZoneInfo.FindSystemTimeZoneById(timeZoneId));
+        }
+        catch (Exception ex) when (ex is TimeZoneNotFoundException or InvalidTimeZoneException)
+        {
+            return utc.AddHours(7);
+        }
+    }
+
+    /// <summary>
+    /// Nếu ô A1 chưa phải tiêu đề thì chèn 1 dòng trống lên đầu sheet và ghi tiêu đề vào đó
+    /// (không ghi đè dữ liệu cũ).
+    /// </summary>
+    private async Task EnsureHeaderRowAsync(string spreadsheetId, string sheetName, string? accessToken, CancellationToken ct)
+    {
+        var baseUrl = $"https://sheets.googleapis.com/v4/spreadsheets/{spreadsheetId}";
+        var headerRange = Uri.EscapeDataString($"{QuoteSheetName(sheetName)}!A1:H1");
+
+        using var getRequest = new HttpRequestMessage(HttpMethod.Get, $"{baseUrl}/values/{headerRange}");
+        getRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        using var getResponse = await _httpClient.SendAsync(getRequest, ct);
+        if (!getResponse.IsSuccessStatusCode)
+            throw new InvalidOperationException($"Lỗi đọc Google Sheet: {await getResponse.Content.ReadAsStringAsync(ct)}");
+
+        using var doc = JsonDocument.Parse(await getResponse.Content.ReadAsStringAsync(ct));
+        var firstCell = doc.RootElement.TryGetProperty("values", out var values)
+                        && values.GetArrayLength() > 0 && values[0].GetArrayLength() > 0
+            ? values[0][0].GetString()
+            : null;
+
+        if (string.Equals(firstCell?.Trim(), HeaderRow[0], StringComparison.OrdinalIgnoreCase))
+            return;
+
+        // Sheet đã có dữ liệu nhưng chưa có tiêu đề → chèn dòng trống lên đầu
+        if (!string.IsNullOrEmpty(firstCell))
+        {
+            var sheetId = await GetSheetIdAsync(baseUrl, sheetName, accessToken, ct);
+            var insertBody = new
+            {
+                requests = new object[]
+                {
+                    new { insertDimension = new { range = new { sheetId, dimension = "ROWS", startIndex = 0, endIndex = 1 }, inheritFromBefore = false } }
+                }
+            };
+            await SendAsync(HttpMethod.Post, $"{baseUrl}:batchUpdate", insertBody, accessToken, ct);
+        }
+
+        await SendAsync(HttpMethod.Put, $"{baseUrl}/values/{headerRange}?valueInputOption=RAW",
+            new { values = new[] { HeaderRow } }, accessToken, ct);
+    }
+
+    private async Task<int> GetSheetIdAsync(string baseUrl, string sheetName, string? accessToken, CancellationToken ct)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, $"{baseUrl}?fields=sheets.properties(sheetId,title)");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        using var response = await _httpClient.SendAsync(request, ct);
+        if (!response.IsSuccessStatusCode)
+            throw new InvalidOperationException($"Lỗi đọc Google Sheet: {await response.Content.ReadAsStringAsync(ct)}");
+
+        using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync(ct));
+        foreach (var sheet in doc.RootElement.GetProperty("sheets").EnumerateArray())
+        {
+            var props = sheet.GetProperty("properties");
+            if (props.GetProperty("title").GetString() == sheetName)
+                return props.GetProperty("sheetId").GetInt32();
+        }
+        throw new InvalidOperationException($"Không tìm thấy tab '{sheetName}' trong Google Sheet.");
+    }
+
+    private async Task SendAsync(HttpMethod method, string url, object body, string? accessToken, CancellationToken ct)
+    {
+        using var request = new HttpRequestMessage(method, url) { Content = JsonContent.Create(body) };
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        using var response = await _httpClient.SendAsync(request, ct);
+        if (!response.IsSuccessStatusCode)
+            throw new InvalidOperationException($"Lỗi ghi Google Sheet: {await response.Content.ReadAsStringAsync(ct)}");
     }
 
     private sealed class GoogleTokenResponse

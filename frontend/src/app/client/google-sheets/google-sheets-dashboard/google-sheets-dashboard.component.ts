@@ -1,6 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 import { GoogleSheetsService } from '../../../core/services/google-sheets.service';
 import { GoogleSheetStatus, SyncHistoryItem } from '../../../core/models/google-sheets.model';
 
@@ -12,6 +13,8 @@ import { GoogleSheetStatus, SyncHistoryItem } from '../../../core/models/google-
 })
 export class GoogleSheetsDashboardComponent implements OnInit {
   private sheetsService = inject(GoogleSheetsService);
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
 
   status: GoogleSheetStatus | null = null;
   history: SyncHistoryItem[] = [];
@@ -26,6 +29,7 @@ export class GoogleSheetsDashboardComponent implements OnInit {
   errorMessage = '';
 
   ngOnInit(): void {
+    this.handleOAuthRedirect();
     this.loadStatus();
     this.loadHistory();
   }
@@ -59,32 +63,32 @@ export class GoogleSheetsDashboardComponent implements OnInit {
     });
   }
 
+  /** Lưu cấu hình bảng tính rồi chuyển sang Google để cấp quyền (OAuth). */
   saveConfig(): void {
-    if (!this.spreadsheetId.trim()) {
-      this.errorMessage = 'Vui lòng nhập Spreadsheet ID.';
+    const spreadsheetId = this.extractSpreadsheetId(this.spreadsheetId);
+    if (!spreadsheetId) {
+      this.errorMessage = 'Vui lòng nhập Spreadsheet ID hoặc link bảng tính.';
       return;
     }
+    this.spreadsheetId = spreadsheetId;
 
     this.connecting = true;
     this.errorMessage = '';
     this.successMessage = '';
 
-    this.sheetsService.connect({
-      spreadsheetId: this.spreadsheetId.trim(),
+    this.sheetsService.saveConfig({
+      spreadsheetId,
       sheetName: this.sheetName.trim()
     }).subscribe({
-      next: (res) => {
-        this.connecting = false;
-        this.successMessage = res.message || 'Lưu cấu hình Google Sheets thành công!';
-        this.loadStatus();
-      },
+      next: () => this.openOAuthConsent(),
       error: (err) => {
         this.connecting = false;
-        this.errorMessage = err?.error?.detail || err?.error || 'Lỗi khi kết nối Google Sheets.';
+        this.errorMessage = err?.error?.error || err?.error?.detail || 'Lỗi khi lưu cấu hình Google Sheets.';
       }
     });
   }
 
+  /** Chỉ dùng ở chế độ giả lập (server chưa cấu hình Google OAuth). */
   fillDemo(): void {
     this.spreadsheetId = '1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms';
     this.sheetName = 'Đơn hàng';
@@ -121,13 +125,35 @@ export class GoogleSheetsDashboardComponent implements OnInit {
   }
 
   openOAuthConsent(): void {
+    this.connecting = true;
     this.sheetsService.getOAuthUrl().subscribe({
       next: (res) => {
         window.location.href = res.url;
       },
       error: (err) => {
+        this.connecting = false;
         this.errorMessage = err?.error?.detail || 'Không thể lấy URL cấp quyền Google OAuth.';
       }
     });
+  }
+
+  /** Cho phép dán cả link https://docs.google.com/spreadsheets/d/{ID}/edit */
+  private extractSpreadsheetId(input: string): string {
+    const value = input.trim();
+    const match = value.match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);
+    return match ? match[1] : value;
+  }
+
+  /** Đọc kết quả Google redirect về (?connected=true hoặc ?error=...) rồi xóa khỏi URL. */
+  private handleOAuthRedirect(): void {
+    const params = this.route.snapshot.queryParamMap;
+    if (params.get('connected') === 'true') {
+      this.successMessage = 'Kết nối Google Sheets thành công. Đơn hàng mới sẽ được tự động đồng bộ.';
+    } else if (params.get('error')) {
+      this.errorMessage = params.get('error')!;
+    } else {
+      return;
+    }
+    void this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true });
   }
 }

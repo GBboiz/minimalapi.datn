@@ -2,6 +2,7 @@ using System.Threading.RateLimiting;
 using System.Text;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using MinimalAPI.Api.Endpoints;
@@ -26,6 +27,8 @@ builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<MinimalAPI.Application.Abstractions.ICurrentStore, CurrentStore>();
+builder.Services.AddDataProtection();
+builder.Services.AddSingleton<GoogleOAuthStateProtector>();
 builder.Services.AddSingleton<PasswordService>();
 builder.Services.AddSingleton<TokenService>();
 

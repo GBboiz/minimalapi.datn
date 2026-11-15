@@ -25,6 +25,7 @@
       <div class="card shadow-sm h-100">
         <div class="card-header bg-light d-flex justify-content-between align-items-center">
           <strong>Trạng thái kết nối</strong>
+          <span *ngIf="status?.isMockMode" class="badge bg-warning text-dark me-1" title="Server chưa cấu hình Google OAuth — chỉ ghi log, không ghi Sheet thật">Chế độ giả lập</span>
           <span *ngIf="status?.isConnected" class="badge bg-success">Đã kết nối</span>
           <span *ngIf="!status?.isConnected" class="badge bg-secondary">Chưa kết nối</span>
         </div>
@@ -45,11 +46,11 @@
           <!-- Form cấu hình -->
           <form (ngSubmit)="saveConfig()">
             <div class="mb-3">
-              <label class="form-label">Google Spreadsheet ID <span class="text-danger">*</span></label>
+              <label class="form-label">Google Spreadsheet ID hoặc link bảng tính <span class="text-danger">*</span></label>
               <input
                 type="text"
                 class="form-control"
-                placeholder="Ví dụ: 1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms"
+                placeholder="Dán link https://docs.google.com/spreadsheets/d/.../edit hoặc ID"
                 [(ngModel)]="spreadsheetId"
                 name="spreadsheetId"
                 required>
@@ -60,6 +61,7 @@
 
             <div class="mb-3">
               <label class="form-label">Tên Sheet tab</label>
+              <div class="form-text small mt-0 mb-1">Tên tab ở góc dưới bảng tính (ví dụ: <code>Trang tính1</code>), không phải tên file.</div>
               <input
                 type="text"
                 class="form-control"
@@ -74,10 +76,11 @@
                 class="btn btn-primary"
                 [disabled]="connecting || !spreadsheetId.trim()">
                 <span *ngIf="connecting" class="spinner-border spinner-border-sm me-1"></span>
-                💾 Lưu cấu hình & Kết nối
+                💾 Lưu cấu hình & Kết nối với Google
               </button>
 
               <button
+                *ngIf="status?.isMockMode"
                 type="button"
                 class="btn btn-outline-success"
                 (click)="fillDemo()"

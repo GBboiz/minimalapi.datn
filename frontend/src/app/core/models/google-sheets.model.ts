@@ -5,6 +5,8 @@ export interface GoogleSheetStatus {
   sheetName: string;
   lastSyncAt: string | null;
   lastErrorMessage: string | null;
+  /** true khi server chưa cấu hình Google OAuth — chỉ giả lập, không ghi Sheet thật */
+  isMockMode: boolean;
 }
 
 export interface SyncHistoryItem {
@@ -22,8 +24,7 @@ export interface SyncHistoryItem {
   processedAt: string | null;
 }
 
-export interface ConnectGoogleSheetRequest {
+export interface SaveGoogleSheetConfigRequest {
   spreadsheetId: string;
   sheetName: string;
-  refreshToken?: string;
 }
