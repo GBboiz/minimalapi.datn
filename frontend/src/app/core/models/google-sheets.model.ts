@@ -1,6 +1,6 @@
 export interface GoogleSheetStatus {
   isConnected: boolean;
-  status: 'Disconnected' | 'Connected' | 'SyncError';
+  status: 'Disconnected' | 'Connected' | 'SyncError' | 'ReauthorizationRequired';
   spreadsheetId: string;
   sheetName: string;
   lastSyncAt: string | null;

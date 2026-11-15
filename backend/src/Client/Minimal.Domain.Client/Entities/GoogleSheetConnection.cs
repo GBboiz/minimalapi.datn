@@ -66,6 +66,20 @@ public sealed class GoogleSheetConnection : AggregateRoot<GoogleSheetConnectionI
         UpdatedAt = DateTime.UtcNow;
     }
 
+    /// <summary>Quyền Google không còn hiệu lực: xóa token, chờ chủ cửa hàng kết nối lại.</summary>
+    public void RequireReauthorization(string reason)
+    {
+        Status = GoogleSheetConnectionStatus.ReauthorizationRequired;
+        EncryptedRefreshToken = string.Empty;
+        LastErrorMessage = reason;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    /// <summary>Có thể đồng bộ (đã cấp quyền và có token).</summary>
+    public bool CanSync =>
+        (Status is GoogleSheetConnectionStatus.Connected or GoogleSheetConnectionStatus.SyncError)
+        && !string.IsNullOrEmpty(EncryptedRefreshToken);
+
     public void Disconnect()
     {
         Status = GoogleSheetConnectionStatus.Disconnected;
