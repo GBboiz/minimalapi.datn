@@ -27,9 +27,16 @@
           <strong>Trạng thái kết nối</strong>
           <span *ngIf="status?.isMockMode" class="badge bg-warning text-dark me-1" title="Server chưa cấu hình Google OAuth — chỉ ghi log, không ghi Sheet thật">Chế độ giả lập</span>
           <span *ngIf="status?.isConnected" class="badge bg-success">Đã kết nối</span>
-          <span *ngIf="!status?.isConnected" class="badge bg-secondary">Chưa kết nối</span>
+          <span *ngIf="status?.status === 'ReauthorizationRequired'" class="badge bg-danger">Cần kết nối lại</span>
+          <span *ngIf="!status?.isConnected && status?.status !== 'ReauthorizationRequired'" class="badge bg-secondary">Chưa kết nối</span>
         </div>
         <div class="card-body">
+          <!-- Quyền Google hết hạn / bị thu hồi -->
+          <div *ngIf="status?.status === 'ReauthorizationRequired'" class="alert alert-danger small mb-3">
+            {{ status?.lastErrorMessage || 'Quyền truy cập Google đã hết hạn.' }}
+            Các đơn hàng mới vẫn được giữ lại và sẽ tự ghi vào Sheet sau khi bạn bấm
+            <strong>Lưu cấu hình &amp; Kết nối với Google</strong>.
+          </div>
           <!-- Chi tiết kết nối hiện tại -->
           <div *ngIf="status?.isConnected" class="mb-3 p-3 bg-light rounded border">
             <div class="mb-1"><strong>Spreadsheet ID:</strong></div>

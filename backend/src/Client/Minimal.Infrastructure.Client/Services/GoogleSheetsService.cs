@@ -94,7 +94,7 @@ public sealed class GoogleSheetsService : IGoogleSheetsService
         CancellationToken ct = default)
     {
         if (!IsMockMode && decryptedRefreshToken.StartsWith("demo_", StringComparison.OrdinalIgnoreCase))
-            throw new InvalidOperationException(
+            throw new GoogleAuthorizationExpiredException(
                 "Cửa hàng đang dùng token demo. Vui lòng bấm 'Lưu cấu hình & Kết nối với Google' để cấp quyền thật.");
 
         if (IsMockMode)
@@ -118,6 +118,9 @@ public sealed class GoogleSheetsService : IGoogleSheetsService
         if (!tokenResponse.IsSuccessStatusCode)
         {
             var err = await tokenResponse.Content.ReadAsStringAsync(ct);
+            if (err.Contains("invalid_grant", StringComparison.OrdinalIgnoreCase))
+                throw new GoogleAuthorizationExpiredException(
+                    "Quyền truy cập Google đã hết hạn hoặc bị thu hồi. Vui lòng kết nối lại Google Sheets.");
             throw new InvalidOperationException($"Không thể làm mới Google Access Token: {err}");
         }
 

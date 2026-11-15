@@ -34,7 +34,7 @@ public sealed class GetGoogleSheetStatusHandler(
 
         // Trả về cấu hình đã lưu kể cả khi chưa cấp quyền, để form giữ giá trị sau khi quay lại từ Google
         return Result<GoogleSheetStatusDto>.Success(new GoogleSheetStatusDto(
-            IsConnected: connection.Status != GoogleSheetConnectionStatus.Disconnected,
+            IsConnected: connection.CanSync,
             Status: connection.Status.ToString(),
             SpreadsheetId: connection.SpreadsheetId,
             SheetName: connection.SheetName,

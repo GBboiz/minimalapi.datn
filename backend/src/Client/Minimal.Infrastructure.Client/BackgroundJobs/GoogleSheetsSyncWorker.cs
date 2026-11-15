@@ -65,16 +65,17 @@ public sealed class GoogleSheetsSyncWorker : BackgroundService
 
         _logger.LogInformation("[GoogleSheetsSyncWorker] Tìm thấy {Count} tin nhắn Outbox cần xử lý.", messages.Count);
 
+        // Cửa hàng bị Google thu hồi quyền trong lượt này → bỏ qua các tin nhắn còn lại của cửa hàng đó
+        var reauthRequiredStores = new HashSet<StoreId>();
+
         foreach (var message in messages)
         {
             if (ct.IsCancellationRequested) break;
+            if (reauthRequiredStores.Contains(message.StoreId)) continue;
 
             var connection = await connectionRepo.GetByStoreIdAsync(message.StoreId, ct);
-            if (connection is null || connection.Status == GoogleSheetConnectionStatus.Disconnected || string.IsNullOrEmpty(connection.EncryptedRefreshToken))
-            {
-                _logger.LogDebug("[GoogleSheetsSyncWorker] Cửa hàng {StoreId} chưa kích hoạt kết nối Google Sheets. Tạm bỏ qua.", message.StoreId);
-                continue;
-            }
+            if (connection is null || !connection.CanSync)
+                continue; // Trạng thái vừa thay đổi sau khi truy vấn — để lượt sau xử lý
 
             try
             {
@@ -83,6 +84,7 @@ public sealed class GoogleSheetsSyncWorker : BackgroundService
                 if (payload is null)
                 {
                     message.RecordFailure("Payload không đúng định dạng.");
+                    outboxRepo.Update(message);
                     await unitOfWork.SaveChangesAsync(ct);
                     continue;
                 }
@@ -102,7 +104,16 @@ public sealed class GoogleSheetsSyncWorker : BackgroundService
 
                 _logger.LogInformation("[GoogleSheetsSyncWorker] Đồng bộ thành công đơn hàng {Code} vào Google Sheets.", payload.Code);
             }
-            catch (Exception ex)
+            catch (GoogleAuthorizationExpiredException ex)
+            {
+                // Không tăng RetryCount: đơn được giữ lại và tự đồng bộ bù khi cửa hàng kết nối lại
+                _logger.LogWarning("[GoogleSheetsSyncWorker] Cửa hàng {StoreId} cần kết nối lại Google Sheets: {Reason}", message.StoreId.Value, ex.Message);
+                reauthRequiredStores.Add(message.StoreId);
+                connection.RequireReauthorization(ex.Message);
+                connectionRepo.Update(connection);
+                await unitOfWork.SaveChangesAsync(ct);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
                 _logger.LogError(ex, "[GoogleSheetsSyncWorker] Lỗi đồng bộ tin nhắn Outbox {MessageId}: {Error}", message.Id, ex.Message);
                 message.RecordFailure(ex.Message);
