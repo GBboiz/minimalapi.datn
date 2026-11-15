@@ -10,6 +10,7 @@ public sealed record GetGoogleSheetStatusQuery : IRequest<Result<GoogleSheetStat
 
 public sealed class GetGoogleSheetStatusHandler(
     IGoogleSheetConnectionRepository connectionRepo,
+    IGoogleSheetsService googleSheetsService,
     ICurrentStore currentStore)
     : IRequestHandler<GetGoogleSheetStatusQuery, Result<GoogleSheetStatusDto>>
 {
@@ -18,7 +19,7 @@ public sealed class GetGoogleSheetStatusHandler(
         var storeId = currentStore.GetRequiredStoreId();
         var connection = await connectionRepo.GetByStoreIdAsync(storeId, ct);
 
-        if (connection is null || connection.Status == GoogleSheetConnectionStatus.Disconnected)
+        if (connection is null)
         {
             return Result<GoogleSheetStatusDto>.Success(new GoogleSheetStatusDto(
                 IsConnected: false,
@@ -26,17 +27,20 @@ public sealed class GetGoogleSheetStatusHandler(
                 SpreadsheetId: string.Empty,
                 SheetName: "Đơn hàng",
                 LastSyncAt: null,
-                LastErrorMessage: null
+                LastErrorMessage: null,
+                IsMockMode: googleSheetsService.IsMockMode
             ));
         }
 
+        // Trả về cấu hình đã lưu kể cả khi chưa cấp quyền, để form giữ giá trị sau khi quay lại từ Google
         return Result<GoogleSheetStatusDto>.Success(new GoogleSheetStatusDto(
-            IsConnected: true,
+            IsConnected: connection.Status != GoogleSheetConnectionStatus.Disconnected,
             Status: connection.Status.ToString(),
             SpreadsheetId: connection.SpreadsheetId,
             SheetName: connection.SheetName,
             LastSyncAt: connection.LastSyncAt,
-            LastErrorMessage: connection.LastErrorMessage
+            LastErrorMessage: connection.LastErrorMessage,
+            IsMockMode: googleSheetsService.IsMockMode
         ));
     }
 }

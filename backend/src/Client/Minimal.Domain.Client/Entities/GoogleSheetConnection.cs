@@ -27,10 +27,9 @@ public sealed class GoogleSheetConnection : AggregateRoot<GoogleSheetConnectionI
         CreatedAt = DateTime.UtcNow
     };
 
-    public void Connect(string spreadsheetId, string sheetName, string encryptedRefreshToken)
+    /// <summary>Lưu refresh token (đã mã hóa) sau khi chủ cửa hàng cấp quyền Google OAuth.</summary>
+    public void Authorize(string encryptedRefreshToken)
     {
-        SpreadsheetId = spreadsheetId.Trim();
-        SheetName = string.IsNullOrWhiteSpace(sheetName) ? "Đơn hàng" : sheetName.Trim();
         EncryptedRefreshToken = encryptedRefreshToken;
         Status = GoogleSheetConnectionStatus.Connected;
         LastErrorMessage = null;
@@ -39,9 +38,17 @@ public sealed class GoogleSheetConnection : AggregateRoot<GoogleSheetConnectionI
 
     public void UpdateConfig(string spreadsheetId, string sheetName)
     {
-        SpreadsheetId = spreadsheetId.Trim();
+        SpreadsheetId = NormalizeSpreadsheetId(spreadsheetId);
         SheetName = string.IsNullOrWhiteSpace(sheetName) ? "Đơn hàng" : sheetName.Trim();
         UpdatedAt = DateTime.UtcNow;
+    }
+
+    /// <summary>Chấp nhận cả link Google Sheets lẫn ID; luôn lưu ID.</summary>
+    public static string NormalizeSpreadsheetId(string input)
+    {
+        var value = input.Trim();
+        var match = System.Text.RegularExpressions.Regex.Match(value, @"/spreadsheets/d/([a-zA-Z0-9_-]+)");
+        return match.Success ? match.Groups[1].Value : value;
     }
 
     public void RecordSyncSuccess()

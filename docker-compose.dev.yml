@@ -63,6 +63,10 @@ services:
       ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=minimalapi_dev;Username=postgres;Password=postgres123"
       Serilog__WriteTo__2__Name: Seq
       Serilog__WriteTo__2__Args__serverUrl: "http://seq:5341"
+      # Google OAuth (Google Sheets) — giá trị lấy từ file .env, để trống = chế độ giả lập
+      Google__ClientId: ${GOOGLE_CLIENT_ID:-}
+      Google__ClientSecret: ${GOOGLE_CLIENT_SECRET:-}
+      Google__RedirectUri: "http://localhost:5001/api/googlesheets/callback"
     ports:
       - "5001:8080"
     healthcheck:

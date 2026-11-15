@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { GoogleSheetStatus, SyncHistoryItem, ConnectGoogleSheetRequest } from '../models/google-sheets.model';
+import { GoogleSheetStatus, SyncHistoryItem, SaveGoogleSheetConfigRequest } from '../models/google-sheets.model';
 
 @Injectable({
   providedIn: 'root'
@@ -19,7 +19,8 @@ export class GoogleSheetsService {
     return this.http.get<{ url: string }>(`${this.apiUrl}/connect-url`);
   }
 
-  connect(request: ConnectGoogleSheetRequest): Observable<{ message: string }> {
+  /** Bước 1: lưu cấu hình bảng tính. Bước 2 là getOAuthUrl() để cấp quyền Google. */
+  saveConfig(request: SaveGoogleSheetConfigRequest): Observable<{ message: string }> {
     return this.http.post<{ message: string }>(`${this.apiUrl}/connect`, request);
   }
 
